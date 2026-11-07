@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center font-sans">
+
+  <!-- Step 1: PIN Login Screen -->
+  <div id="loginBox" class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 text-center">
+    <div class="inline-flex p-3 bg-emerald-950/80 border border-emerald-700 rounded-2xl mb-3 text-emerald-400">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+    </div>
+    <h2 class="text-xl font-black tracking-wide text-white">ADMIN CONSOLE</h2>
+    <p class="text-xs text-slate-400 mt-1 mb-5">Sandeep Singh • Master Authorization</p>
+
+    <input type="password" id="pinInput" placeholder="Enter 4-digit PIN" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-2xl font-bold tracking-widest text-emerald-400 mb-4 focus:outline-none focus:border-emerald-500">
+
+    <button onclick="unlockAdmin()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-95">
+      UNLOCK CONSOLE
+    </button>
+  </div>
+
+  <!-- Step 2: Main Dashboard (Hidden by default) -->
+  <div id="dashboardBox" class="hidden w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
+    
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+      <div>
+        <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">Admin Active</span>
+        <h1 class="text-lg font-black text-white mt-1">MASTER CONTROLS</h1>
+      </div>
+      <button onclick="logoutAdmin()" class="text-xs text-slate-400 hover:text-rose-400 font-mono">Logout</button>
+    </div>
+
+    <!-- Mobile Punch Toggle Card -->
+    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-slate-300">Mobile Direct Punch</span>
+        <span id="statusIndicator" class="text-xs font-mono font-bold text-amber-400">Status: Checking...</span>
+      </div>
+      <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
+        OFF karne par workers sirf workshop gate ka physical QR scan kar sakenge.
+      </p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="setMobilePermission('OFF')" class="py-2.5 bg-rose-600 hover:bg-rose-700 font-bold text-xs rounded-lg text-white shadow transition active:scale-95">
+          ⛔ DISABLE (Off)
+        </button>
+        <button onclick="setMobilePermission('ON')" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 font-bold text-xs rounded-lg text-white shadow transition active:scale-95">
+          ✅ ENABLE (On)
+        </button>
+      </div>
+    </div>
+
+    <!-- Operational Shortcuts -->
+    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+      <span class="text-xs font-bold text-slate-300 block mb-2">Cloud Links</span>
+      <div class="flex flex-col gap-2 text-xs">
+        <a href="https://docs.google.com/spreadsheets" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-between text-emerald-400 font-semibold">
+          <span>📊 Open Attendance Sheet</span>
+          <span>↗</span>
+        </a>
+        <a href="https://drive.google.com" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-between text-blue-400 font-semibold">
+          <span>📁 Open Photos Drive Folder</span>
+          <span>↗</span>
+        </a>
+        <a href="./index.html" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-between text-slate-300 font-semibold">
+          <span>📱 Open Worker Scan Portal</span>
+          <span>↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="pt-2 text-center border-t border-slate-800">
+      <p class="text-[10px] text-slate-400 uppercase font-mono">System Architect: Sandeep Singh (J-5383-CGC)</p>
+    </div>
+  </div>
+
+  <script>
+    // PASTE YOUR APPS SCRIPT URL HERE:
+    const SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+    let authenticatedPin = "";
+
+    function unlockAdmin() {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (!pin) {
+        alert("PIN enter karein!");
+        return;
+      }
+      authenticatedPin = pin;
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('dashboardBox').classList.remove('hidden');
+    }
+
+    function logoutAdmin() {
+      authenticatedPin = "";
+      document.getElementById('pinInput').value = "";
+      document.getElementById('dashboardBox').classList.add('hidden');
+      document.getElementById('loginBox').classList.remove('hidden');
+    }
+
+    async function setMobilePermission(target) {
+      const indicator = document.getElementById('statusIndicator');
+      indicator.innerText = "Updating...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "ADMIN_SWITCH", pin: authenticatedPin, targetStatus: target })
+        });
+        const data = await res.json();
+        
+        if (data.status === "success") {
+          indicator.innerText = `Status: ${target}`;
+          indicator.className = (target === "ON") 
+            ? "text-xs font-mono font-bold text-emerald-400" 
+            : "text-xs font-mono font-bold text-rose-400";
+          alert(data.message);
+        } else {
+          alert("Error: " + data.message);
+          indicator.innerText = "Status: Check Failed";
+        }
+      } catch (err) {
+        alert("Network Error!");
+        indicator.innerText = "Status: Error";
+      }
+    }
+  </script>
+</body>
+</html>
