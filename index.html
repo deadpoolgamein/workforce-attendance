@@ -5,51 +5,95 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Workforce Attendance Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 flex flex-col items-center justify-center font-sans">
 
   <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
     
-    <!-- Header with Admin Ownership -->
-    <div class="border-b border-slate-800 pb-3 mb-4 text-center">
-      <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-3 py-1 rounded-full border border-emerald-800 font-mono font-bold">Official Duty Portal</span>
-      <h1 class="text-xl font-black text-white mt-2 tracking-wide uppercase">Workforce Attendance</h1>
-      <p class="text-xs text-slate-400 mt-0.5">Live Camera & GPS Verified System</p>
+    <!-- Header -->
+    <div class="border-b border-slate-800 pb-3 mb-3 text-center">
+      <div class="flex items-center justify-center gap-2 mb-1">
+        <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-3 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">150m Geofenced</span>
+        <span class="text-[10px] tracking-widest uppercase bg-cyan-950 text-cyan-400 px-3 py-0.5 rounded-full border border-cyan-800 font-mono font-bold">Anti-Proxy Verified</span>
+      </div>
+      <h1 class="text-xl font-black text-white tracking-wide uppercase">CGC WORKFORCE ATTENDANCE</h1>
+      <p class="text-[11px] text-slate-400">Mechanical • Electrical • Plumbing • Carpentry</p>
     </div>
 
-    <!-- Duty Toggle (IN / OUT) -->
-    <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl mb-4 border border-slate-800">
+    <!-- Duty Toggle -->
+    <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl mb-3 border border-slate-800">
       <button id="btnOnDuty" onclick="setDuty('ON-DUTY')" class="py-2.5 rounded-lg font-bold text-xs bg-emerald-600 text-white shadow-md transition">ON-DUTY (In)</button>
       <button id="btnOffDuty" onclick="setDuty('OFF-DUTY')" class="py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition">OFF-DUTY (Out)</button>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="flex border-b border-slate-800 mb-3 text-xs font-semibold">
+      <button id="tabQr" onclick="switchMode('QR')" class="flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400">Gate QR Scan (Mandatory)</button>
+      <button id="tabManual" onclick="switchMode('MANUAL')" class="flex-1 pb-2 border-b-2 border-transparent text-slate-400">Mobile Direct Punch</button>
     </div>
 
     <!-- Emp ID Input -->
     <div class="mb-3">
       <label class="block text-[11px] font-bold text-slate-400 mb-1 tracking-wider">EMPLOYEE ID / BADGE NO</label>
-      <input type="text" id="empId" placeholder="e.g. MEC-W01, ELE-001" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-base font-mono font-bold tracking-wider text-emerald-400 uppercase focus:outline-none focus:border-emerald-500">
+      <input type="text" id="empId" placeholder="e.g. MEC-W01, J-5383-CGC" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-base font-mono font-bold tracking-wider text-emerald-400 uppercase focus:outline-none focus:border-emerald-500">
     </div>
 
-    <!-- Live Camera View -->
-    <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-3 aspect-[4/3] flex items-center justify-center">
-      <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
-      <canvas id="canvas" class="hidden"></canvas>
-      <div id="gpsBadge" class="absolute bottom-2 left-2 bg-black/80 px-2.5 py-1 rounded text-[10px] text-yellow-300 font-mono border border-slate-700">
-        GPS: Acquiring satellite signal...
+    <!-- Section 1: Gate QR Scanner -->
+    <div id="qrSection">
+      <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-2 aspect-[4/3] flex items-center justify-center">
+        <div id="reader" class="w-full h-full"></div>
+        <video id="selfieVideo" autoplay playsinline class="hidden w-full h-full object-cover"></video>
+        <div id="gpsBadge" class="absolute bottom-2 left-2 bg-black/80 px-2.5 py-0.5 rounded text-[10px] text-yellow-300 font-mono border border-slate-700 z-10">
+          GPS: Acquiring fix...
+        </div>
       </div>
+      <p id="instructionText" class="text-center text-[10px] text-slate-400 mb-3">Workshop Gate par laga official printout QR scan karein</p>
     </div>
 
-    <!-- Punch Action Button -->
-    <button id="punchBtn" onclick="processAttendance()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-[0.98]">
-      PUNCH ATTENDANCE
-    </button>
+    <!-- Section 2: Mobile Direct Punch -->
+    <div id="manualSection" class="hidden mb-3">
+      <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl mb-3 text-center">
+        <p class="text-xs text-slate-300 font-medium">Bina QR ke Direct Punch</p>
+        <p class="text-[10px] text-amber-400 mt-0.5">(Subject to Sandeep Singh's Mobile Permission)</p>
+      </div>
+      <button onclick="handleManualPunch()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-[0.98]">
+        SUBMIT MOBILE ATTENDANCE
+      </button>
+    </div>
 
-    <!-- Response / Feedback Display -->
-    <div id="logMessage" class="hidden mt-3 p-3 rounded-xl text-center text-xs font-medium"></div>
+    <canvas id="hiddenCanvas" class="hidden"></canvas>
 
-    <!-- Permanent Developer Credit -->
-    <div class="mt-4 pt-3 border-t border-slate-800/80 text-center">
+    <!-- Feedback Message Box -->
+    <div id="logMessage" class="hidden mb-3 p-3 rounded-xl text-center text-xs font-medium"></div>
+
+    <!-- Admin Switch Bar -->
+    <div class="flex justify-between items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-xs mb-3">
+      <span class="text-slate-400">Mobile Punch Control:</span>
+      <button onclick="openAdminModal()" class="text-emerald-400 hover:text-emerald-300 font-bold underline font-mono">Admin Switch</button>
+    </div>
+
+    <!-- Owner Branding -->
+    <div class="pt-2 border-t border-slate-800/80 text-center">
       <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">System Architect & Admin</p>
       <p class="text-xs font-bold text-emerald-400 tracking-wide font-mono mt-0.5">SANDEEP SINGH • EMP ID: J-5383-CGC</p>
+    </div>
+  </div>
+
+  <!-- Admin Modal -->
+  <div id="adminModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-xs w-full shadow-2xl">
+      <h3 class="text-base font-bold text-white mb-1 text-center">Mobile Punch Permission</h3>
+      <p class="text-[11px] text-slate-400 text-center mb-3">Mobile direct punch band ya chalu karein (Gate QR hamesha chalega)</p>
+      
+      <input type="password" id="adminPinInput" placeholder="Enter 4-digit PIN" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-center font-mono text-lg font-bold text-emerald-400 mb-3 focus:outline-none focus:border-emerald-500">
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <button onclick="changeMobilePermission('OFF')" class="py-2.5 bg-rose-600 hover:bg-rose-700 font-bold text-xs rounded-lg text-white">MOBILE OFF (Band)</button>
+        <button onclick="changeMobilePermission('ON')" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 font-bold text-xs rounded-lg text-white">MOBILE ON (Chalu)</button>
+      </div>
+
+      <button onclick="closeAdminModal()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 font-bold text-xs rounded-lg text-slate-300">Cancel</button>
     </div>
   </div>
 
@@ -60,17 +104,10 @@
     // ==========================================
 
     let dutyType = "ON-DUTY";
+    let activeMode = "QR";
     let currentCoords = null;
-
-    // Camera Init
-    const video = document.getElementById('video');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
-        .then(stream => { video.srcObject = stream; })
-        .catch(err => { alert("Camera access allow karein live photo verification ke liye."); });
-    } else {
-      alert("https://script.google.com/macros/s/AKfycbwMRuHsQN8hcYgddXa0y1OVWhUd6ZGXlmSTX6Sbyk-m9t52RE8YkM8pAhpU5VXRRcs9pw/exec");
-    }
+    let isProcessing = false;
+    let html5QrScanner = null;
 
     // GPS Tracking
     if (navigator.geolocation) {
@@ -78,13 +115,17 @@
         pos => {
           currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           const badge = document.getElementById('gpsBadge');
-          badge.innerText = `GPS Fixed (±${Math.round(pos.coords.accuracy)}m)`;
-          badge.className = "absolute bottom-2 left-2 bg-emerald-950/90 border border-emerald-600 px-2.5 py-1 rounded text-[10px] text-emerald-300 font-mono";
+          if (badge) {
+            badge.innerText = `GPS Fixed (±${Math.round(pos.coords.accuracy)}m)`;
+            badge.className = "absolute bottom-2 left-2 bg-emerald-950/90 border border-emerald-600 px-2.5 py-0.5 rounded text-[10px] text-emerald-300 font-mono z-10";
+          }
         },
         err => {
           const badge = document.getElementById('gpsBadge');
-          badge.innerText = "GPS Error: Location Permission Blocked";
-          badge.className = "absolute bottom-2 left-2 bg-rose-950/90 border border-rose-600 px-2.5 py-1 rounded text-[10px] text-rose-300 font-mono";
+          if (badge) {
+            badge.innerText = "GPS Error: Location Blocked";
+            badge.className = "absolute bottom-2 left-2 bg-rose-950/90 border border-rose-600 px-2.5 py-0.5 rounded text-[10px] text-rose-300 font-mono z-10";
+          }
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
@@ -101,43 +142,61 @@
       }
     }
 
-    async function processAttendance() {
+    function switchMode(mode) {
+      activeMode = mode;
+      if (mode === 'QR') {
+        document.getElementById('qrSection').classList.remove('hidden');
+        document.getElementById('manualSection').classList.add('hidden');
+        document.getElementById('tabQr').className = "flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400";
+        document.getElementById('tabManual').className = "flex-1 pb-2 border-b-2 border-transparent text-slate-400";
+      } else {
+        document.getElementById('qrSection').classList.add('hidden');
+        document.getElementById('manualSection').classList.remove('hidden');
+        document.getElementById('tabManual').className = "flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400";
+        document.getElementById('tabQr').className = "flex-1 pb-2 border-b-2 border-transparent text-slate-400";
+      }
+    }
+
+    // Capture snapshot from current active video (rear scanner or selfie)
+    function captureFrame(videoElem) {
+      if (!videoElem) return "No Photo";
+      const canvas = document.getElementById('hiddenCanvas');
+      canvas.width = videoElem.videoWidth || 640;
+      canvas.height = videoElem.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoElem, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.6);
+    }
+
+    async function sendAttendance(mode, scannedText, photoBase64) {
       const empId = document.getElementById('empId').value.trim();
       const log = document.getElementById('logMessage');
-      const punchBtn = document.getElementById('punchBtn');
 
-      if (!empId) {
-        alert("Pehle Employee ID enter karein!");
+      // Device Proxy Cooldown Check (10 Minutes)
+      const lastPunchTime = localStorage.getItem('last_punch_timestamp');
+      const lastPunchEmp = localStorage.getItem('last_punch_emp');
+      const nowMs = Date.now();
+      if (lastPunchTime && (nowMs - lastPunchTime < 10 * 60 * 1000) && lastPunchEmp !== empId.toUpperCase()) {
+        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
+        log.innerText = "❌ Security Lock: Is phone se abhi haal hi me dusri attendance lagi hai! 10 minute baad punch karein.";
+        isProcessing = false;
         return;
       }
-      if (!currentCoords) {
-        alert("GPS Signal lock ho raha hai, kripya 2 second wait karein.");
-        return;
-      }
 
-      // Live photo capture from video frame
-      const canvas = document.getElementById('canvas');
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const photoBase64 = canvas.toDataURL('image/jpeg', 0.6); // 60% quality compression for instant upload
-
-      punchBtn.disabled = true;
-      punchBtn.innerText = "VERIFYING & RECORDING...";
-      log.className = "mt-3 p-3 rounded-xl text-center text-xs font-medium bg-slate-800 text-yellow-300 block";
-      log.innerText = "Biometric snapshot & GPS coordinate upload ho rahe hain...";
+      log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-slate-800 text-yellow-300 block";
+      log.innerText = `Recording ${dutyType} for ${empId.toUpperCase()}...`;
 
       try {
         const payload = {
-          empId: empId,
+          punchMode: mode,
+          empId: empId.toUpperCase(),
           dutyType: dutyType,
           latitude: currentCoords.lat,
           longitude: currentCoords.lng,
-          photo: photoBase64
+          scannedQr: scannedText || "",
+          photo: photoBase64 || "No Photo"
         };
 
-        // Apps Script ke liye URL-encoded / text format sabse safe rehta hai
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -147,27 +206,95 @@
         const data = await res.json();
 
         if (data.status === "success") {
-          log.className = "mt-3 p-3 rounded-xl text-center text-xs font-medium bg-emerald-950 border border-emerald-500 text-emerald-300 block";
+          localStorage.setItem('last_punch_timestamp', nowMs.toString());
+          localStorage.setItem('last_punch_emp', empId.toUpperCase());
+
+          log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-emerald-950 border border-emerald-500 text-emerald-300 block";
           log.innerHTML = `
             <div class="text-sm font-bold text-emerald-400">✔ ${data.dutyType} RECORDED</div>
-            <div class="mt-0.5">${data.name} — <span class="text-slate-300 font-mono">${data.trade}</span></div>
-            <div class="text-[11px] text-slate-400 mt-1 font-mono">Time: ${data.time} | Dist: ${data.distance}m</div>
+            <div class="mt-0.5">${data.name} (${data.trade})</div>
+            <div class="text-[10px] text-slate-300 font-mono mt-1">Time: ${data.time} | Distance: ${data.distance}m</div>
           `;
           document.getElementById('empId').value = "";
         } else {
-          log.className = "mt-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
-          log.innerText = "✖ FAILED: " + data.message;
+          log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
+          log.innerText = "✖ " + data.message;
         }
       } catch (err) {
-        // Asli error console me check karne ke liye:
-        console.error("Fetch error detail:", err);
-        log.className = "mt-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
-        log.innerText = "Network / Permission Error! URL check karein ya Console inspect karein.";
+        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
+        log.innerText = "Network Error! Connection re-verify karein.";
       } finally {
-        punchBtn.disabled = false;
-        punchBtn.innerText = "PUNCH ATTENDANCE";
+        setTimeout(() => { isProcessing = false; }, 4000);
       }
     }
+
+    // QR Detected -> Trigger Live Selfie Step
+    async function handleQrDetected(text) {
+      const empId = document.getElementById('empId').value.trim();
+      const log = document.getElementById('logMessage');
+
+      if (!empId) {
+        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-amber-950 border border-amber-500 text-amber-300 block";
+        log.innerText = "⚠ Pehle apni Employee ID enter karein!";
+        return;
+      }
+      if (!currentCoords) {
+        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-amber-950 border border-amber-500 text-amber-300 block";
+        log.innerText = "⚠ GPS fix ho raha hai, 2 second rukiye...";
+        return;
+      }
+      if (isProcessing) return;
+      isProcessing = true;
+
+      // Gate QR scanned from rear camera: capture frame & send
+      const rearVideo = document.querySelector("#reader video");
+      const photo = captureFrame(rearVideo);
+      sendAttendance("QR", text, photo);
+    }
+
+    function handleManualPunch() {
+      const empId = document.getElementById('empId').value.trim();
+      if (!empId) {
+        alert("Employee ID enter karein!");
+        return;
+      }
+      const rearVideo = document.querySelector("#reader video");
+      const photo = captureFrame(rearVideo);
+      sendAttendance("MANUAL", "", photo);
+    }
+
+    // Admin Modal Controls
+    function openAdminModal() { document.getElementById('adminModal').classList.remove('hidden'); }
+    function closeAdminModal() { document.getElementById('adminModal').classList.add('hidden'); }
+
+    async function changeMobilePermission(target) {
+      const pin = document.getElementById('adminPinInput').value;
+      if (!pin) { alert("PIN enter karein!"); return; }
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "ADMIN_SWITCH", pin: pin, targetStatus: target })
+        });
+        const data = await res.json();
+        alert(data.message);
+        if (data.status === "success") {
+          closeAdminModal();
+          document.getElementById('adminPinInput').value = "";
+        }
+      } catch (err) {
+        alert("Request failed! Connection check karein.");
+      }
+    }
+
+    // Start Scanner
+    html5QrScanner = new Html5QrcodeScanner("reader", {
+      fps: 10,
+      qrbox: { width: 220, height: 220 },
+      aspectRatio: 1.333
+    });
+    html5QrScanner.render(handleQrDetected);
   </script>
 </body>
 </html>
