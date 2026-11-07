@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workforce Attendance Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 flex flex-col items-center justify-center font-sans">
+
+  <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
+    
+    <!-- Header with Admin Ownership -->
+    <div class="border-b border-slate-800 pb-3 mb-4 text-center">
+      <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-3 py-1 rounded-full border border-emerald-800 font-mono font-bold">Official Duty Portal</span>
+      <h1 class="text-xl font-black text-white mt-2 tracking-wide uppercase">Workforce Attendance</h1>
+      <p class="text-xs text-slate-400 mt-0.5">Live Camera & GPS Verified System</p>
+    </div>
+
+    <!-- Duty Toggle (IN / OUT) -->
+    <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl mb-4 border border-slate-800">
+      <button id="btnOnDuty" onclick="setDuty('ON-DUTY')" class="py-2.5 rounded-lg font-bold text-xs bg-emerald-600 text-white shadow-md transition">ON-DUTY (In)</button>
+      <button id="btnOffDuty" onclick="setDuty('OFF-DUTY')" class="py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition">OFF-DUTY (Out)</button>
+    </div>
+
+    <!-- Emp ID Input -->
+    <div class="mb-3">
+      <label class="block text-[11px] font-bold text-slate-400 mb-1 tracking-wider">EMPLOYEE ID / BADGE NO</label>
+      <input type="text" id="empId" placeholder="e.g. MEC-W01, ELE-001" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-base font-mono font-bold tracking-wider text-emerald-400 uppercase focus:outline-none focus:border-emerald-500">
+    </div>
+
+    <!-- Live Camera View -->
+    <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-3 aspect-[4/3] flex items-center justify-center">
+      <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
+      <canvas id="canvas" class="hidden"></canvas>
+      <div id="gpsBadge" class="absolute bottom-2 left-2 bg-black/80 px-2.5 py-1 rounded text-[10px] text-yellow-300 font-mono border border-slate-700">
+        GPS: Acquiring satellite signal...
+      </div>
+    </div>
+
+    <!-- Punch Action Button -->
+    <button id="punchBtn" onclick="processAttendance()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-[0.98]">
+      PUNCH ATTENDANCE
+    </button>
+
+    <!-- Response / Feedback Display -->
+    <div id="logMessage" class="hidden mt-3 p-3 rounded-xl text-center text-xs font-medium"></div>
+
+    <!-- Permanent Developer Credit -->
+    <div class="mt-4 pt-3 border-t border-slate-800/80 text-center">
+      <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">System Architect & Admin</p>
+      <p class="text-xs font-bold text-emerald-400 tracking-wide font-mono mt-0.5">SANDEEP SINGH • EMP ID: 930-CU</p>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
+    const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+    // ==========================================
+
+    let dutyType = "ON-DUTY";
+    let currentCoords = null;
+
+    // Camera Init
+    const video = document.getElementById('video');
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => { alert("Camera access allow karein live photo verification ke liye."); });
+    } else {
+      alert("https://script.google.com/macros/s/AKfycbwMRuHsQN8hcYgddXa0y1OVWhUd6ZGXlmSTX6Sbyk-m9t52RE8YkM8pAhpU5VXRRcs9pw/exec");
+    }
+
+    // GPS Tracking
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(
+        pos => {
+          currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          const badge = document.getElementById('gpsBadge');
+          badge.innerText = `GPS Fixed (±${Math.round(pos.coords.accuracy)}m)`;
+          badge.className = "absolute bottom-2 left-2 bg-emerald-950/90 border border-emerald-600 px-2.5 py-1 rounded text-[10px] text-emerald-300 font-mono";
+        },
+        err => {
+          const badge = document.getElementById('gpsBadge');
+          badge.innerText = "GPS Error: Location Permission Blocked";
+          badge.className = "absolute bottom-2 left-2 bg-rose-950/90 border border-rose-600 px-2.5 py-1 rounded text-[10px] text-rose-300 font-mono";
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    function setDuty(type) {
+      dutyType = type;
+      if (type === 'ON-DUTY') {
+        document.getElementById('btnOnDuty').className = "py-2.5 rounded-lg font-bold text-xs bg-emerald-600 text-white shadow-md transition";
+        document.getElementById('btnOffDuty').className = "py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition";
+      } else {
+        document.getElementById('btnOffDuty').className = "py-2.5 rounded-lg font-bold text-xs bg-rose-600 text-white shadow-md transition";
+        document.getElementById('btnOnDuty').className = "py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition";
+      }
+    }
+
+    async function processAttendance() {
+      const empId = document.getElementById('empId').value.trim();
+      const log = document.getElementById('logMessage');
+      const punchBtn = document.getElementById('punchBtn');
+
+      if (!empId) {
+        alert("Pehle Employee ID enter karein!");
+        return;
+      }
+      if (!currentCoords) {
+        alert("GPS Signal lock ho raha hai, kripya 2 second wait karein.");
+        return;
+      }
+
+      // Live photo capture from video frame
+      const canvas = document.getElementById('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const photoBase64 = canvas.toDataURL('image/jpeg', 0.6); // 60% quality compression for instant upload
+
+      punchBtn.disabled = true;
+      punchBtn.innerText = "VERIFYING & RECORDING...";
+      log.className = "mt-3 p-3 rounded-xl text-center text-xs font-medium bg-slate-800 text-yellow-300 block";
+      log.innerText = "Biometric snapshot & GPS coordinate upload ho rahe hain...";
+
+      try {
+        const payload = {
+          empId: empId,
+          dutyType: dutyType,
+          latitude: currentCoords.lat,
+          longitude: currentCoords.lng,
+          photo: photoBase64
+        };
+
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+          log.className = "mt-3 p-3 rounded-xl text-center text-xs font-medium bg-emerald-950 border border-emerald-500 text-emerald-300 block";
+          log.innerHTML = `
+            <div class="text-sm font-bold text-emerald-400">✔ ${data.dutyType} RECORDED</div>
+            <div class="mt-0.5">${data.name} — <span class="text-slate-300 font-mono">${data.trade}</span></div>
+            <div class="text-[11px] text-slate-400 mt-1 font-mono">Time: ${data.time} | Dist: ${data.distance}m</div>
+          `;
+          document.getElementById('empId').value = "";
+        } else {
+          log.className = "mt-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
+          log.innerText = "✖ FAILED: " + data.message;
+        }
+      } catch (err) {
+        log.className = "mt-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
+        log.innerText = "Network Error! Connection check karein.";
+      } finally {
+        punchBtn.disabled = false;
+        punchBtn.innerText = "PUNCH ATTENDANCE";
+      }
+    }
+  </script>
+</body>
+</html>
