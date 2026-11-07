@@ -27,7 +27,7 @@
       <button id="btnOffDuty" onclick="setDuty('OFF-DUTY')" class="py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition">OFF-DUTY (Out)</button>
     </div>
 
-    <!-- Mode Selector -->
+    <!-- Mode Selector Tabs -->
     <div class="flex border-b border-slate-800 mb-3 text-xs font-semibold">
       <button id="tabQr" onclick="switchMode('QR')" class="flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400">Gate QR Scan (Mandatory)</button>
       <button id="tabManual" onclick="switchMode('MANUAL')" class="flex-1 pb-2 border-b-2 border-transparent text-slate-400">Mobile Direct Punch</button>
@@ -39,11 +39,18 @@
       <input type="text" id="empId" placeholder="e.g. MEC-W01, J-5383-CGC" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-base font-mono font-bold tracking-wider text-emerald-400 uppercase focus:outline-none focus:border-emerald-500">
     </div>
 
-    <!-- Section 1: Gate QR Scanner -->
+    <!-- Section 1: Gate QR Scanner Viewport with Flip Button -->
     <div id="qrSection">
+      <div class="flex items-center justify-between mb-1.5">
+        <span id="camIndicator" class="text-[10px] text-slate-400 font-mono">Camera: Detecting...</span>
+        <!-- Dedicated Camera Switch Button -->
+        <button type="button" onclick="toggleCameraSwitch()" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold transition active:scale-95 shadow">
+          <span>🔄</span> Flip Camera
+        </button>
+      </div>
+
       <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-2 aspect-[4/3] flex items-center justify-center">
         <div id="reader" class="w-full h-full"></div>
-        <video id="selfieVideo" autoplay playsinline class="hidden w-full h-full object-cover"></video>
         <div id="gpsBadge" class="absolute bottom-2 left-2 bg-black/80 px-2.5 py-0.5 rounded text-[10px] text-yellow-300 font-mono border border-slate-700 z-10">
           GPS: Acquiring fix...
         </div>
@@ -54,7 +61,7 @@
     <!-- Section 2: Mobile Direct Punch -->
     <div id="manualSection" class="hidden mb-3">
       <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl mb-3 text-center">
-        <p class="text-xs text-slate-300 font-medium">Bina QR ke Direct Punch</p>
+        <p class="text-xs text-slate-300 font-medium">Bina QR ke Direct Mobile Punch</p>
         <p class="text-[10px] text-amber-400 mt-0.5">(Subject to Sandeep Singh's Mobile Permission)</p>
       </div>
       <button onclick="handleManualPunch()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-[0.98]">
@@ -99,7 +106,7 @@
 
   <script>
     // ==========================================
-    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
+    // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
     // ==========================================
 
@@ -107,7 +114,9 @@
     let activeMode = "QR";
     let currentCoords = null;
     let isProcessing = false;
-    let html5QrScanner = null;
+    let html5QrCode = null;
+    let cameraList = [];
+    let currentCamIndex = 0;
 
     // GPS Tracking
     if (navigator.geolocation) {
@@ -157,14 +166,14 @@
       }
     }
 
-    // Capture snapshot from current active video (rear scanner or selfie)
-    function captureFrame(videoElem) {
-      if (!videoElem) return "No Photo";
+    function captureVideoFrame() {
+      const videoElement = document.querySelector("#reader video");
+      if (!videoElement) return "No Photo";
       const canvas = document.getElementById('hiddenCanvas');
-      canvas.width = videoElem.videoWidth || 640;
-      canvas.height = videoElem.videoHeight || 480;
+      canvas.width = videoElement.videoWidth || 640;
+      canvas.height = videoElement.videoHeight || 480;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoElem, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
       return canvas.toDataURL('image/jpeg', 0.6);
     }
 
@@ -172,13 +181,12 @@
       const empId = document.getElementById('empId').value.trim();
       const log = document.getElementById('logMessage');
 
-      // Device Proxy Cooldown Check (10 Minutes)
       const lastPunchTime = localStorage.getItem('last_punch_timestamp');
       const lastPunchEmp = localStorage.getItem('last_punch_emp');
       const nowMs = Date.now();
       if (lastPunchTime && (nowMs - lastPunchTime < 10 * 60 * 1000) && lastPunchEmp !== empId.toUpperCase()) {
         log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
-        log.innerText = "❌ Security Lock: Is phone se abhi haal hi me dusri attendance lagi hai! 10 minute baad punch karein.";
+        log.innerText = "❌ Security Lock: Is phone se abhi dusri attendance lagi hai! 10 min baad punch karein.";
         isProcessing = false;
         return;
       }
@@ -191,8 +199,8 @@
           punchMode: mode,
           empId: empId.toUpperCase(),
           dutyType: dutyType,
-          latitude: currentCoords.lat,
-          longitude: currentCoords.lng,
+          latitude: currentCoords ? currentCoords.lat : 0,
+          longitude: currentCoords ? currentCoords.lng : 0,
           scannedQr: scannedText || "",
           photo: photoBase64 || "No Photo"
         };
@@ -224,12 +232,12 @@
         log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
         log.innerText = "Network Error! Connection re-verify karein.";
       } finally {
-        setTimeout(() => { isProcessing = false; }, 4000);
+        setTimeout(() => { isProcessing = false; }, 3500);
       }
     }
 
-    // QR Detected -> Trigger Live Selfie Step
-    async function handleQrDetected(text) {
+    function handleQrDetected(text) {
+      if (isProcessing) return;
       const empId = document.getElementById('empId').value.trim();
       const log = document.getElementById('logMessage');
 
@@ -243,13 +251,10 @@
         log.innerText = "⚠ GPS fix ho raha hai, 2 second rukiye...";
         return;
       }
-      if (isProcessing) return;
-      isProcessing = true;
 
-      // Gate QR scanned from rear camera: capture frame & send
-      const rearVideo = document.querySelector("#reader video");
-      const photo = captureFrame(rearVideo);
-      sendAttendance("QR", text, photo);
+      isProcessing = true;
+      const snapshot = captureVideoFrame();
+      sendAttendance("QR", text, snapshot);
     }
 
     function handleManualPunch() {
@@ -258,9 +263,69 @@
         alert("Employee ID enter karein!");
         return;
       }
-      const rearVideo = document.querySelector("#reader video");
-      const photo = captureFrame(rearVideo);
-      sendAttendance("MANUAL", "", photo);
+      const snapshot = captureVideoFrame();
+      sendAttendance("MANUAL", "", snapshot);
+    }
+
+    // Camera Switcher Logic
+    async function startCameraByIndex(index) {
+      if (!cameraList.length) return;
+      currentCamIndex = index % cameraList.length;
+      const selectedCam = cameraList[currentCamIndex];
+
+      const indicator = document.getElementById('camIndicator');
+      const isBack = selectedCam.label.toLowerCase().includes('back') || 
+                     selectedCam.label.toLowerCase().includes('rear') || 
+                     selectedCam.label.toLowerCase().includes('environment');
+      indicator.innerText = isBack ? "Active: Back Camera" : "Active: Front Camera";
+
+      if (html5QrCode && html5QrCode.isScanning) {
+        await html5QrCode.stop();
+      }
+
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
+
+      html5QrCode.start(
+        selectedCam.id,
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        handleQrDetected,
+        () => {}
+      ).catch(e => {
+        console.error("Camera switch error:", e);
+      });
+    }
+
+    function toggleCameraSwitch() {
+      if (cameraList.length > 1) {
+        startCameraByIndex(currentCamIndex + 1);
+      } else {
+        alert("Aapke device me sirf ek camera mila hai.");
+      }
+    }
+
+    function initCameraSystem() {
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length > 0) {
+          cameraList = devices;
+          
+          // Back camera ko default priority do
+          let backIdx = devices.findIndex(d => 
+            d.label.toLowerCase().includes('back') || 
+            d.label.toLowerCase().includes('rear') || 
+            d.label.toLowerCase().includes('environment')
+          );
+          
+          let initialIdx = (backIdx !== -1) ? backIdx : (devices.length > 1 ? 1 : 0);
+          startCameraByIndex(initialIdx);
+        } else {
+          document.getElementById('camIndicator').innerText = "No camera found";
+        }
+      }).catch(err => {
+        console.error("Camera access error:", err);
+        document.getElementById('camIndicator').innerText = "Camera access blocked";
+      });
     }
 
     // Admin Modal Controls
@@ -288,27 +353,9 @@
       }
     }
 
-    / Force Back (Rear) Camera for Gate QR Scan
-    const html5QrCode = new Html5Qrcode("reader");
-    
-    html5QrCode.start(
-      { facingMode: { exact: "environment" } }, // First attempt: strict back camera
-      {
-        fps: 10,
-        qrbox: { width: 220, height: 220 },
-        aspectRatio: 1.333
-      },
-      handleQrDetected,
-      (errorMessage) => { /* ignore frame scan errors */ }
-    ).catch(err => {
-      // Fallback: agar exact environment fail ho toh loose "environment"
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        handleQrDetected
-      ).catch(e => console.error("Camera rear error:", e));
+    window.addEventListener("DOMContentLoaded", () => {
+      initCameraSystem();
     });
-    html5QrScanner.render(handleQrDetected);
   </script>
 </body>
 </html>
