@@ -3,9 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Workforce Attendance Portal</title>
+  <title>CGC Workforce Attendance</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    #reader video {
+      width: 100% !important;
+      height: auto !important;
+      max-height: 380px !important;
+      object-fit: cover !important;
+      border-radius: 0.75rem;
+    }
+    #reader__scan_region {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 flex flex-col items-center justify-center font-sans">
 
@@ -29,7 +43,7 @@
 
     <!-- Mode Selector Tabs -->
     <div class="flex border-b border-slate-800 mb-3 text-xs font-semibold">
-      <button id="tabQr" onclick="switchMode('QR')" class="flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400">Gate QR Scan (Mandatory)</button>
+      <button id="tabQr" onclick="switchMode('QR')" class="flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400">Gate QR Scan</button>
       <button id="tabManual" onclick="switchMode('MANUAL')" class="flex-1 pb-2 border-b-2 border-transparent text-slate-400">Mobile Direct Punch</button>
     </div>
 
@@ -43,19 +57,17 @@
     <div id="qrSection">
       <div class="flex items-center justify-between mb-1.5">
         <span id="camIndicator" class="text-[10px] text-slate-400 font-mono">Camera: Detecting...</span>
-        <!-- Dedicated Camera Switch Button -->
         <button type="button" onclick="toggleCameraSwitch()" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold transition active:scale-95 shadow">
           <span>🔄</span> Flip Camera
         </button>
       </div>
 
-      <!-- NAYA RESPONSIVE SCANNER CONTAINER -->
-<div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-2 min-h-[300px] flex items-center justify-center">
-  <div id="reader" class="w-full"></div>
-  <div id="gpsBadge" class="absolute bottom-2 left-2 bg-black/80 px-2.5 py-0.5 rounded text-[10px] text-yellow-300 font-mono border border-slate-700 z-10">
-    GPS: Acquiring fix...
-  </div>
-</div>
+      <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-2 min-h-[280px] flex items-center justify-center">
+        <div id="reader" class="w-full"></div>
+        <div id="gpsBadge" class="absolute bottom-2 left-2 bg-black/80 px-2.5 py-0.5 rounded text-[10px] text-yellow-300 font-mono border border-slate-700 z-10">
+          GPS: Acquiring fix...
+        </div>
+      </div>
       <p id="instructionText" class="text-center text-[10px] text-slate-400 mb-3">Workshop Gate par laga official printout QR scan karein</p>
     </div>
 
@@ -63,7 +75,7 @@
     <div id="manualSection" class="hidden mb-3">
       <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl mb-3 text-center">
         <p class="text-xs text-slate-300 font-medium">Bina QR ke Direct Mobile Punch</p>
-        <p class="text-[10px] text-amber-400 mt-0.5">(Subject to Sandeep Singh's Mobile Permission)</p>
+        <p class="text-[10px] text-amber-400 mt-0.5">(Subject to Admin Permission)</p>
       </div>
       <button onclick="handleManualPunch()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-[0.98]">
         SUBMIT MOBILE ATTENDANCE
@@ -75,12 +87,6 @@
     <!-- Feedback Message Box -->
     <div id="logMessage" class="hidden mb-3 p-3 rounded-xl text-center text-xs font-medium"></div>
 
-    <!-- Admin Switch Bar -->
-    <div class="flex justify-between items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-xs mb-3">
-      <span class="text-slate-400">Mobile Punch Control:</span>
-      <button onclick="openAdminModal()" class="text-emerald-400 hover:text-emerald-300 font-bold underline font-mono">Admin Switch</button>
-    </div>
-
     <!-- Owner Branding -->
     <div class="pt-2 border-t border-slate-800/80 text-center">
       <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">System Architect & Admin</p>
@@ -88,28 +94,9 @@
     </div>
   </div>
 
-  <!-- Admin Modal -->
-  <div id="adminModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-xs w-full shadow-2xl">
-      <h3 class="text-base font-bold text-white mb-1 text-center">Mobile Punch Permission</h3>
-      <p class="text-[11px] text-slate-400 text-center mb-3">Mobile direct punch band ya chalu karein (Gate QR hamesha chalega)</p>
-      
-      <input type="password" id="adminPinInput" placeholder="Enter 4-digit PIN" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-center font-mono text-lg font-bold text-emerald-400 mb-3 focus:outline-none focus:border-emerald-500">
-
-      <div class="grid grid-cols-2 gap-2 mb-3">
-        <button onclick="changeMobilePermission('OFF')" class="py-2.5 bg-rose-600 hover:bg-rose-700 font-bold text-xs rounded-lg text-white">MOBILE OFF (Band)</button>
-        <button onclick="changeMobilePermission('ON')" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 font-bold text-xs rounded-lg text-white">MOBILE ON (Chalu)</button>
-      </div>
-
-      <button onclick="closeAdminModal()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 font-bold text-xs rounded-lg text-slate-300">Cancel</button>
-    </div>
-  </div>
-
   <script>
-    // ==========================================
-    // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
+    // PASTE YOUR APPS SCRIPT URL HERE:
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
-    // ==========================================
 
     let dutyType = "ON-DUTY";
     let activeMode = "QR";
@@ -268,7 +255,12 @@
       sendAttendance("MANUAL", "", snapshot);
     }
 
-    // Camera Switcher Logic
+    function getQrBoxDimensions(viewfinderWidth, viewfinderHeight) {
+      let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+      let qrboxSize = Math.floor(minEdge * 0.7);
+      return { width: qrboxSize, height: qrboxSize };
+    }
+
     async function startCameraByIndex(index) {
       if (!cameraList.length) return;
       currentCamIndex = index % cameraList.length;
@@ -288,9 +280,18 @@
         html5QrCode = new Html5Qrcode("reader");
       }
 
+      const config = {
+        fps: 15,
+        qrbox: getQrBoxDimensions,
+        videoConstraints: {
+          facingMode: isBack ? "environment" : "user",
+          focusMode: "continuous"
+        }
+      };
+
       html5QrCode.start(
         selectedCam.id,
-        { fps: 10, qrbox: { width: 220, height: 220 } },
+        config,
         handleQrDetected,
         () => {}
       ).catch(e => {
@@ -302,7 +303,7 @@
       if (cameraList.length > 1) {
         startCameraByIndex(currentCamIndex + 1);
       } else {
-        alert("Aapke device me sirf ek camera mila hai.");
+        alert("Aapke device me ek hi camera detected hai.");
       }
     }
 
@@ -310,48 +311,19 @@
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length > 0) {
           cameraList = devices;
-          
-          // Back camera ko default priority do
           let backIdx = devices.findIndex(d => 
             d.label.toLowerCase().includes('back') || 
             d.label.toLowerCase().includes('rear') || 
             d.label.toLowerCase().includes('environment')
           );
-          
-          let initialIdx = (backIdx !== -1) ? backIdx : (devices.length > 1 ? 1 : 0);
+          let initialIdx = (backIdx !== -1) ? backIdx : 0;
           startCameraByIndex(initialIdx);
         } else {
           document.getElementById('camIndicator').innerText = "No camera found";
         }
       }).catch(err => {
-        console.error("Camera access error:", err);
         document.getElementById('camIndicator').innerText = "Camera access blocked";
       });
-    }
-
-    // Admin Modal Controls
-    function openAdminModal() { document.getElementById('adminModal').classList.remove('hidden'); }
-    function closeAdminModal() { document.getElementById('adminModal').classList.add('hidden'); }
-
-    async function changeMobilePermission(target) {
-      const pin = document.getElementById('adminPinInput').value;
-      if (!pin) { alert("PIN enter karein!"); return; }
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "ADMIN_SWITCH", pin: pin, targetStatus: target })
-        });
-        const data = await res.json();
-        alert(data.message);
-        if (data.status === "success") {
-          closeAdminModal();
-          document.getElementById('adminPinInput').value = "";
-        }
-      } catch (err) {
-        alert("Request failed! Connection check karein.");
-      }
     }
 
     window.addEventListener("DOMContentLoaded", () => {
