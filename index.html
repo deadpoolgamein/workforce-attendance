@@ -288,11 +288,25 @@
       }
     }
 
-    // Start Scanner
-    html5QrScanner = new Html5QrcodeScanner("reader", {
-      fps: 10,
-      qrbox: { width: 220, height: 220 },
-      aspectRatio: 1.333
+    / Force Back (Rear) Camera for Gate QR Scan
+    const html5QrCode = new Html5Qrcode("reader");
+    
+    html5QrCode.start(
+      { facingMode: { exact: "environment" } }, // First attempt: strict back camera
+      {
+        fps: 10,
+        qrbox: { width: 220, height: 220 },
+        aspectRatio: 1.333
+      },
+      handleQrDetected,
+      (errorMessage) => { /* ignore frame scan errors */ }
+    ).catch(err => {
+      // Fallback: agar exact environment fail ho toh loose "environment"
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        handleQrDetected
+      ).catch(e => console.error("Camera rear error:", e));
     });
     html5QrScanner.render(handleQrDetected);
   </script>
