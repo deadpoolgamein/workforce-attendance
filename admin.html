@@ -8,7 +8,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center font-sans">
 
-  <!-- Step 1: PIN Login Screen -->
+  <!-- Step 1: PIN Login -->
   <div id="loginBox" class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 text-center">
     <div class="inline-flex p-3 bg-emerald-950/80 border border-emerald-700 rounded-2xl mb-3 text-emerald-400">
       <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
@@ -35,22 +35,52 @@
       <button onclick="logoutAdmin()" class="text-xs text-slate-400 hover:text-rose-400 font-mono">Logout</button>
     </div>
 
-    <!-- 1-Click WhatsApp Broadcast Section -->
+    <!-- Quick Add New Employee Modal/Card -->
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>➕</span> Quick Add Employee
+        </span>
+        <span class="text-[10px] text-slate-400 font-mono">Direct to Sheet</span>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <input type="text" id="addEmpId" placeholder="Emp ID (e.g. MEC-W05)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-emerald-500">
+        <input type="text" id="addEmpName" placeholder="Worker Full Name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+        
+        <div class="grid grid-cols-2 gap-2">
+          <select id="addEmpDept" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-300 focus:outline-none focus:border-emerald-500">
+            <option value="Mechanical">Mechanical</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Plumbing">Plumbing</option>
+            <option value="Carpentry">Carpentry</option>
+            <option value="Maintenance">Maintenance</option>
+          </select>
+          <input type="text" id="addEmpTrade" placeholder="Trade (e.g. Welder)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <button id="addEmpBtn" onclick="submitNewEmployee()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition active:scale-95">
+          Save Employee to Database
+        </button>
+      </div>
+      <div id="addEmpStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
+    </div>
+
+    <!-- 1-Click WhatsApp Broadcast -->
     <div class="bg-gradient-to-br from-emerald-950/60 to-slate-950 border border-emerald-800/80 rounded-2xl p-4 mb-4 shadow-lg">
       <div class="flex items-center justify-between mb-1.5">
         <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
           <span>📢</span> WhatsApp Group Broadcast
         </span>
-        <span class="text-[10px] text-slate-400 font-mono">1-Click Share</span>
+        <span class="text-[10px] text-slate-400 font-mono">Live Report</span>
       </div>
       <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Google Sheet se real-time present/absent count nikaal kar direct group me report send karein.
+        Real-time count nikaal kar direct group me formatted report post karein.
       </p>
 
       <button id="broadcastBtn" onclick="shareLiveReportToWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
         <span>📲</span> SHARE TODAY'S REPORT TO GROUP
       </button>
-
       <div id="broadcastStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
     </div>
 
@@ -73,7 +103,7 @@
       </div>
     </div>
 
-    <!-- Cloud Shortcuts -->
+    <!-- Cloud Shortcuts & Google Form Link -->
     <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
       <span class="text-xs font-bold text-slate-300 block mb-2">Cloud Links</span>
       <div class="flex flex-col gap-2 text-xs">
@@ -99,10 +129,8 @@
   </div>
 
   <script>
-    // ==========================================
     // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
-    // ==========================================
 
     let authenticatedPin = "";
 
@@ -122,6 +150,61 @@
       document.getElementById('pinInput').value = "";
       document.getElementById('dashboardBox').classList.add('hidden');
       document.getElementById('loginBox').classList.remove('hidden');
+    }
+
+    // Direct Employee Add Function
+    async function submitNewEmployee() {
+      const empId = document.getElementById('addEmpId').value.trim();
+      const name = document.getElementById('addEmpName').value.trim();
+      const dept = document.getElementById('addEmpDept').value;
+      const trade = document.getElementById('addEmpTrade').value.trim();
+      const status = document.getElementById('addEmpStatus');
+      const btn = document.getElementById('addEmpBtn');
+
+      if (!empId || !name) {
+        alert("Emp ID aur Name compulsory hain!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Saving to Database...";
+      status.classList.remove('hidden');
+      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
+      status.innerText = "Sheet me entry likhi ja rahi hai...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "ADD_EMPLOYEE",
+            pin: authenticatedPin,
+            newEmpId: empId,
+            newName: name,
+            newDept: dept,
+            newTrade: trade || dept
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
+          status.innerText = "✔ " + data.message;
+          document.getElementById('addEmpId').value = "";
+          document.getElementById('addEmpName').value = "";
+          document.getElementById('addEmpTrade').value = "";
+        } else {
+          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (err) {
+        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+        status.innerText = "Network Error! Connection verify karein.";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Save Employee to Database";
+      }
     }
 
     async function setMobilePermission(target) {
@@ -152,7 +235,6 @@
       }
     }
 
-    // 1-Click WhatsApp Live Stats Broadcast
     async function shareLiveReportToWhatsApp() {
       const btn = document.getElementById('broadcastBtn');
       const status = document.getElementById('broadcastStatus');
@@ -175,7 +257,6 @@
           status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
           status.innerText = "Stats synced! Opening WhatsApp...";
 
-          // Formatted Report Text
           let msg = `📊 *CGC WORKFORCE ATTENDANCE REPORT*\n`;
           msg += `📅 *Date:* ${data.date}\n`;
           msg += `━━━━━━━━━━━━━━━━━━━━\n`;
@@ -191,7 +272,6 @@
           msg += `👨‍💼 *System Admin:* Sandeep Singh (J-5383-CGC)\n`;
           msg += `_Mess & Maintenance Department_`;
 
-          // Direct WhatsApp Redirect
           const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
           window.open(whatsappUrl, '_blank');
         } else {
