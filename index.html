@@ -10,18 +10,20 @@
     #reader video {
       width: 100% !important;
       height: auto !important;
-      max-height: 380px !important;
+      max-height: 360px !important;
       object-fit: cover !important;
       border-radius: 0.75rem;
     }
-    #reader__scan_region {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 flex flex-col items-center justify-center font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 flex flex-col items-center justify-center font-sans relative">
+
+  <!-- Fullscreen Uploading Overlay for Slow 2G/3G Internet -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
+    <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+    <p class="text-sm font-bold text-white tracking-wide">Syncing Attendance...</p>
+    <p class="text-xs text-slate-400 mt-1">Photo & GPS log verify ho rahe hain, screen band na karein</p>
+  </div>
 
   <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
     
@@ -29,7 +31,7 @@
     <div class="border-b border-slate-800 pb-3 mb-3 text-center">
       <div class="flex items-center justify-center gap-2 mb-1">
         <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-3 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">150m Geofenced</span>
-        <span class="text-[10px] tracking-widest uppercase bg-cyan-950 text-cyan-400 px-3 py-0.5 rounded-full border border-cyan-800 font-mono font-bold">Anti-Proxy Verified</span>
+        <span class="text-[10px] tracking-widest uppercase bg-cyan-950 text-cyan-400 px-3 py-0.5 rounded-full border border-cyan-800 font-mono font-bold">Anti-Proxy Active</span>
       </div>
       <h1 class="text-xl font-black text-white tracking-wide uppercase">CGC WORKFORCE ATTENDANCE</h1>
       <p class="text-[11px] text-slate-400">Mechanical • Electrical • Plumbing • Carpentry</p>
@@ -39,6 +41,17 @@
     <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl mb-3 border border-slate-800">
       <button id="btnOnDuty" onclick="setDuty('ON-DUTY')" class="py-2.5 rounded-lg font-bold text-xs bg-emerald-600 text-white shadow-md transition">ON-DUTY (In)</button>
       <button id="btnOffDuty" onclick="setDuty('OFF-DUTY')" class="py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition">OFF-DUTY (Out)</button>
+    </div>
+
+    <!-- Shift Selection -->
+    <div class="mb-3">
+      <label class="block text-[11px] font-bold text-slate-400 mb-1 tracking-wider">ASSIGNED SHIFT</label>
+      <select id="shiftSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-400 focus:outline-none focus:border-emerald-500">
+        <option value="General">General Shift (09:00 AM - 05:00 PM)</option>
+        <option value="Morning">Morning Shift (06:00 AM - 02:00 PM)</option>
+        <option value="Afternoon">Afternoon Shift (02:00 PM - 10:00 PM)</option>
+        <option value="Night">Night Shift (10:00 PM - 06:00 AM)</option>
+      </select>
     </div>
 
     <!-- Mode Selector Tabs -->
@@ -62,7 +75,7 @@
         </button>
       </div>
 
-      <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-2 min-h-[280px] flex items-center justify-center">
+      <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-2 min-h-[260px] flex items-center justify-center">
         <div id="reader" class="w-full"></div>
         <div id="gpsBadge" class="absolute bottom-2 left-2 bg-black/80 px-2.5 py-0.5 rounded text-[10px] text-yellow-300 font-mono border border-slate-700 z-10">
           GPS: Acquiring fix...
@@ -95,8 +108,10 @@
   </div>
 
   <script>
-    // PASTE YOUR APPS SCRIPT URL HERE:
+    // ==========================================
+    // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
+    // ==========================================
 
     let dutyType = "ON-DUTY";
     let activeMode = "QR";
@@ -106,7 +121,6 @@
     let cameraList = [];
     let currentCamIndex = 0;
 
-    // GPS Tracking
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(
         pos => {
@@ -162,12 +176,14 @@
       canvas.height = videoElement.videoHeight || 480;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL('image/jpeg', 0.6);
+      return canvas.toDataURL('image/jpeg', 0.5);
     }
 
     async function sendAttendance(mode, scannedText, photoBase64) {
       const empId = document.getElementById('empId').value.trim();
+      const shift = document.getElementById('shiftSelect').value;
       const log = document.getElementById('logMessage');
+      const loader = document.getElementById('loadingOverlay');
 
       const lastPunchTime = localStorage.getItem('last_punch_timestamp');
       const lastPunchEmp = localStorage.getItem('last_punch_emp');
@@ -179,14 +195,14 @@
         return;
       }
 
-      log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-slate-800 text-yellow-300 block";
-      log.innerText = `Recording ${dutyType} for ${empId.toUpperCase()}...`;
+      loader.classList.remove('hidden');
 
       try {
         const payload = {
           punchMode: mode,
           empId: empId.toUpperCase(),
           dutyType: dutyType,
+          shift: shift,
           latitude: currentCoords ? currentCoords.lat : 0,
           longitude: currentCoords ? currentCoords.lng : 0,
           scannedQr: scannedText || "",
@@ -209,7 +225,8 @@
           log.innerHTML = `
             <div class="text-sm font-bold text-emerald-400">✔ ${data.dutyType} RECORDED</div>
             <div class="mt-0.5">${data.name} (${data.trade})</div>
-            <div class="text-[10px] text-slate-300 font-mono mt-1">Time: ${data.time} | Distance: ${data.distance}m</div>
+            <div class="text-[11px] font-mono text-amber-300 mt-1">Shift: ${shift} • Status: ${data.punctuality}</div>
+            <div class="text-[10px] text-slate-300 font-mono">Time: ${data.time} | Distance: ${data.distance}m</div>
           `;
           document.getElementById('empId').value = "";
         } else {
@@ -220,6 +237,7 @@
         log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
         log.innerText = "Network Error! Connection re-verify karein.";
       } finally {
+        loader.classList.add('hidden');
         setTimeout(() => { isProcessing = false; }, 3500);
       }
     }
