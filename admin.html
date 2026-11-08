@@ -285,7 +285,31 @@
         btn.disabled = false;
         btn.innerHTML = `<span>📲</span> SHARE TODAY'S REPORT TO GROUP`;
       }
+
+      <!-- Monthly Salary & Duty Hours Exporter -->
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>📑</span> Monthly Attendance / Salary Sheet
+        </span>
+        <span class="text-[10px] text-slate-400 font-mono">Excel / CSV Export</span>
+      </div>
+      
+      <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
+        Select month to compile total Present Days and Working Hours for Accounts/Management.
+      </p>
+
+      <div class="flex gap-2 mb-3">
+        <input type="month" id="reportMonthSelect" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-emerald-400 focus:outline-none focus:border-emerald-500">
+        <button onclick="downloadMonthlyReportCSV()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-lg shadow transition active:scale-95">
+          Export CSV
+        </button>
+      </div>
+
+      <div id="exportStatus" class="hidden text-[11px] text-center font-mono"></div>
+    </div>
     }
+    
   </script>
 </body>
 </html>
