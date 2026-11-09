@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    #reader video {
+    #reader video, #selfieVideo {
       width: 100% !important;
       height: auto !important;
       max-height: 360px !important;
@@ -18,11 +18,26 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 flex flex-col items-center justify-center font-sans relative">
 
-  <!-- Fullscreen Uploading Overlay for Slow 2G/3G Internet -->
-  <div id="loadingOverlay" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
+  <!-- Fullscreen Uploading Overlay -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
     <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-    <p class="text-sm font-bold text-white tracking-wide">Syncing Attendance...</p>
-    <p class="text-xs text-slate-400 mt-1">Photo & GPS log verify ho rahe hain, screen band na karein</p>
+    <p id="loadingTitle" class="text-sm font-bold text-white tracking-wide">Syncing Attendance...</p>
+    <p id="loadingSub" class="text-xs text-slate-400 mt-1 text-center">Photo & GPS log verify ho rahe hain, screen band na karein</p>
+  </div>
+
+  <!-- Selfie Capture Modal Popup -->
+  <div id="selfieModal" class="hidden fixed inset-0 bg-black/95 z-40 flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-slate-900 border border-emerald-600/80 rounded-2xl p-4 text-center">
+      <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-3 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">Step 2: Face Verification</span>
+      <h3 class="text-base font-bold text-white mt-2 mb-1">Camera ke samne dekhein</h3>
+      <p class="text-xs text-slate-300 mb-3">Selfie capture ho rahi hai: <span id="countdownText" class="font-mono text-emerald-400 font-bold text-sm">3s</span></p>
+
+      <div class="relative bg-black rounded-xl overflow-hidden border border-slate-700 min-h-[260px] flex items-center justify-center mb-3">
+        <video id="selfieVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+      </div>
+
+      <p class="text-[10px] text-slate-400">Purnroop se camera ke samne sidhe khade rahein</p>
+    </div>
   </div>
 
   <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
@@ -81,7 +96,7 @@
           GPS: Acquiring fix...
         </div>
       </div>
-      <p id="instructionText" class="text-center text-[10px] text-slate-400 mb-3">Workshop Gate par laga official printout QR scan karein</p>
+      <p id="instructionText" class="text-center text-[10px] text-slate-400 mb-3">Workshop Gate ka official printout scan karein</p>
     </div>
 
     <!-- Section 2: Mobile Direct Punch -->
@@ -120,6 +135,7 @@
     let html5QrCode = null;
     let cameraList = [];
     let currentCamIndex = 0;
+    let selfieStream = null;
 
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(
@@ -168,15 +184,56 @@
       }
     }
 
-    function captureVideoFrame() {
-      const videoElement = document.querySelector("#reader video");
-      if (!videoElement) return "No Photo";
-      const canvas = document.getElementById('hiddenCanvas');
-      canvas.width = videoElement.videoWidth || 640;
-      canvas.height = videoElement.videoHeight || 480;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL('image/jpeg', 0.5);
+    // Capture Selfie from Front Camera
+    async function captureWorkerSelfie() {
+      return new Promise(async (resolve) => {
+        const modal = document.getElementById('selfieModal');
+        const video = document.getElementById('selfieVideo');
+        const countdown = document.getElementById('countdownText');
+
+        modal.classList.remove('hidden');
+
+        try {
+          selfieStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+            audio: false
+          });
+          video.srcObject = selfieStream;
+          await video.play();
+
+          let count = 3;
+          countdown.innerText = count + "s";
+
+          const timer = setInterval(() => {
+            count--;
+            if (count > 0) {
+              countdown.innerText = count + "s";
+            } else {
+              clearInterval(timer);
+              
+              // Draw snapshot to canvas
+              const canvas = document.getElementById('hiddenCanvas');
+              canvas.width = video.videoWidth || 480;
+              canvas.height = video.videoHeight || 480;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const photoData = canvas.toDataURL('image/jpeg', 0.5);
+
+              // Stop front cam
+              if (selfieStream) {
+                selfieStream.getTracks().forEach(t => t.stop());
+                selfieStream = null;
+              }
+              modal.classList.add('hidden');
+              resolve(photoData);
+            }
+          }, 1000);
+
+        } catch (err) {
+          modal.classList.add('hidden');
+          resolve("No Photo");
+        }
+      });
     }
 
     async function sendAttendance(mode, scannedText, photoBase64) {
@@ -184,16 +241,6 @@
       const shift = document.getElementById('shiftSelect').value;
       const log = document.getElementById('logMessage');
       const loader = document.getElementById('loadingOverlay');
-
-      const lastPunchTime = localStorage.getItem('last_punch_timestamp');
-      const lastPunchEmp = localStorage.getItem('last_punch_emp');
-      const nowMs = Date.now();
-      if (lastPunchTime && (nowMs - lastPunchTime < 10 * 60 * 1000) && lastPunchEmp !== empId.toUpperCase()) {
-        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
-        log.innerText = "❌ Security Lock: Is phone se abhi dusri attendance lagi hai! 10 min baad punch karein.";
-        isProcessing = false;
-        return;
-      }
 
       loader.classList.remove('hidden');
 
@@ -218,8 +265,8 @@
         const data = await res.json();
 
         if (data.status === "success") {
-          localStorage.setItem('last_punch_timestamp', nowMs.toString());
-          localStorage.setItem('last_punch_emp', empId.toUpperCase());
+          // Strict 5-minute cooldown per device
+          localStorage.setItem('last_punch_time', Date.now().toString());
 
           log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-emerald-950 border border-emerald-500 text-emerald-300 block";
           log.innerHTML = `
@@ -238,14 +285,24 @@
         log.innerText = "Network Error! Connection re-verify karein.";
       } finally {
         loader.classList.add('hidden');
-        setTimeout(() => { isProcessing = false; }, 3500);
+        setTimeout(() => { isProcessing = false; }, 3000);
       }
     }
 
-    function handleQrDetected(text) {
+    async function handleQrDetected(text) {
       if (isProcessing) return;
       const empId = document.getElementById('empId').value.trim();
       const log = document.getElementById('logMessage');
+
+      // 1. Check strict 5-minute device lock
+      const lastPunch = localStorage.getItem('last_punch_time');
+      const nowMs = Date.now();
+      if (lastPunch && (nowMs - parseInt(lastPunch) < 5 * 60 * 1000)) {
+        const remainingSec = Math.ceil((5 * 60 * 1000 - (nowMs - parseInt(lastPunch))) / 1000);
+        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
+        log.innerText = `❌ Cooldown Active: Is phone se abhi punch hua hai. Kripya ${remainingSec}s intezar karein.`;
+        return;
+      }
 
       if (!empId) {
         log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-amber-950 border border-amber-500 text-amber-300 block";
@@ -259,18 +316,47 @@
       }
 
       isProcessing = true;
-      const snapshot = captureVideoFrame();
-      sendAttendance("QR", text, snapshot);
+
+      // Stop QR scanner video temporarily to free camera hardware for selfie
+      if (html5QrCode && html5QrCode.isScanning) {
+        await html5QrCode.stop();
+      }
+
+      // Step 2: Open Front Camera for actual Face Verification
+      const selfiePhoto = await captureWorkerSelfie();
+
+      // Submit attendance
+      await sendAttendance("QR", text, selfiePhoto);
+
+      // Re-start QR scanner for next worker
+      startCameraByIndex(currentCamIndex);
     }
 
-    function handleManualPunch() {
+    async function handleManualPunch() {
       const empId = document.getElementById('empId').value.trim();
+      const log = document.getElementById('logMessage');
+
+      const lastPunch = localStorage.getItem('last_punch_time');
+      const nowMs = Date.now();
+      if (lastPunch && (nowMs - parseInt(lastPunch) < 5 * 60 * 1000)) {
+        const remainingSec = Math.ceil((5 * 60 * 1000 - (nowMs - parseInt(lastPunch))) / 1000);
+        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
+        log.innerText = `❌ Cooldown Active: Kripya ${remainingSec}s intezar karein.`;
+        return;
+      }
+
       if (!empId) {
         alert("Employee ID enter karein!");
         return;
       }
-      const snapshot = captureVideoFrame();
-      sendAttendance("MANUAL", "", snapshot);
+
+      isProcessing = true;
+      if (html5QrCode && html5QrCode.isScanning) {
+        await html5QrCode.stop();
+      }
+      const selfiePhoto = await captureWorkerSelfie();
+      await sendAttendance("MANUAL", "", selfiePhoto);
+      startCameraByIndex(currentCamIndex);
     }
 
     function getQrBoxDimensions(viewfinderWidth, viewfinderHeight) {
@@ -313,7 +399,7 @@
         handleQrDetected,
         () => {}
       ).catch(e => {
-        console.error("Camera switch error:", e);
+        console.error("Camera error:", e);
       });
     }
 
@@ -321,7 +407,7 @@
       if (cameraList.length > 1) {
         startCameraByIndex(currentCamIndex + 1);
       } else {
-        alert("Aapke device me ek hi camera detected hai.");
+        alert("Device me ek hi camera detected hai.");
       }
     }
 
