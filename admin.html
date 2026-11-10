@@ -212,27 +212,27 @@
       <div id="pinChangeStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
     </div>
 
-    <!-- Cloud Shortcuts (Public / Shared Safe Links) -->
+    <!-- Dynamic Cloud Shortcuts (Auto Role-Switching) -->
     <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-bold text-slate-300">Cloud Shortcuts</span>
-        <span class="text-[10px] text-emerald-400 font-mono">Public Safe View</span>
+        <span id="viewModeBadge" class="text-[10px] text-emerald-400 font-mono">Public Safe View</span>
       </div>
       <div class="flex flex-col gap-2 text-xs">
-        <!-- Public Attendance Sheet Link (Dashboard, Attendance, Emp, Holiday, Locations) -->
-        <a id="sheetLinkTag" href="PASTE_YOUR_PUBLIC_VIEW_SHEET_URL_HERE" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-between text-emerald-400 font-semibold transition">
+        <!-- Attendance Sheet Link -->
+        <a id="sheetLinkTag" href="#" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-between text-emerald-400 font-semibold transition">
           <span class="flex items-center gap-2">
             <span>📊</span>
-            <span>Open Attendance Sheet (Public View)</span>
+            <span id="sheetLinkText">Open Attendance Sheet (Public View)</span>
           </span>
           <span>↗</span>
         </a>
 
-        <!-- Public Photos Folder Link -->
-        <a id="driveLinkTag" href="PASTE_YOUR_PUBLIC_PHOTOS_FOLDER_URL_HERE" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-between text-blue-400 font-semibold transition">
+        <!-- Photos Folder Link -->
+        <a id="driveLinkTag" href="#" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-between text-blue-400 font-semibold transition">
           <span class="flex items-center gap-2">
             <span>📁</span>
-            <span>Open Verified Attendance Photos</span>
+            <span id="driveLinkText">Open Verified Photos (Public View)</span>
           </span>
           <span>↗</span>
         </a>
@@ -255,10 +255,19 @@
   </div>
 
   <script>
-    // ==========================================
-    // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
+    // ========================================================
+    // 1. CONFIGURE YOUR CLOUD & SCRIPT URLS HERE:
+    // ========================================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
-    // ==========================================
+
+    // Public Sheets & Photos (For Supervisors / Viewers)
+    const PUBLIC_SHEET_URL = "https://docs.google.com/spreadsheets/d/1MkoMROL8seeYB4KgpSRxFVMV8qmMPgHTADy4NF1Ci-8/edit?usp=sharing";
+    const PUBLIC_DRIVE_URL = "https://drive.google.com/drive/folders/1kA3wur3nnLPvoML6S8ahUFJ9a5_XE-LY";
+
+    // Master Sheets & Photos (For Super Admin: Sandeep Singh)
+    const MASTER_SHEET_URL = "https://docs.google.com/spreadsheets/d/1KthpLeh5lqCcBNEnmJ3Wfsm14cPbxPiLLO_TpSUYyZ4/edit?usp=sharing";
+    const MASTER_DRIVE_URL = "https://drive.google.com/drive/folders/1aede5nJeuV7o9Vzmfoozg9fZZrvBzoM6";
+    // ========================================================
 
     let authenticatedPin = "";
     let currentAdminRole = "";
@@ -319,15 +328,36 @@
 
           document.getElementById('welcomeAdminName').innerText = data.adminName;
           const badge = document.getElementById('roleBadge');
+          const viewBadge = document.getElementById('viewModeBadge');
+          const sheetLink = document.getElementById('sheetLinkTag');
+          const sheetText = document.getElementById('sheetLinkText');
+          const driveLink = document.getElementById('driveLinkTag');
+          const driveText = document.getElementById('driveLinkText');
 
           if (data.adminRole === "SUPER_ADMIN") {
             badge.innerText = "Super Admin";
             badge.className = "text-[10px] tracking-widest uppercase bg-cyan-950 text-cyan-400 px-2.5 py-0.5 rounded-full border border-cyan-800 font-mono font-bold";
             document.getElementById('superAdminSection').classList.remove('hidden');
+
+            // Set Master Direct Links
+            viewBadge.innerText = "Full Master DB";
+            viewBadge.className = "text-[10px] text-cyan-400 font-mono font-bold";
+            sheetLink.href = MASTER_SHEET_URL;
+            sheetText.innerText = "Open Master DB (Full Settings & Admins)";
+            driveLink.href = MASTER_DRIVE_URL;
+            driveText.innerText = "Open Master Photos Folder";
           } else {
             badge.innerText = data.designation || "Dept Admin";
             badge.className = "text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold";
             document.getElementById('superAdminSection').classList.add('hidden');
+
+            // Set Public Safe Links
+            viewBadge.innerText = "Public Safe View";
+            viewBadge.className = "text-[10px] text-emerald-400 font-mono";
+            sheetLink.href = PUBLIC_SHEET_URL;
+            sheetText.innerText = "Open Attendance Sheet (Public View)";
+            driveLink.href = PUBLIC_DRIVE_URL;
+            driveText.innerText = "Open Verified Photos (Public View)";
           }
 
           document.getElementById('loginBox').classList.add('hidden');
