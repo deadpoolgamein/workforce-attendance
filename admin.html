@@ -27,12 +27,31 @@
   <!-- Step 2: Main Dashboard -->
   <div id="dashboardBox" class="hidden w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
     
+    <!-- Top Header -->
     <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
       <div>
         <span id="roleBadge" class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">Admin Active</span>
         <h1 id="welcomeAdminName" class="text-lg font-black text-white mt-1">MASTER CONTROLS</h1>
       </div>
       <button onclick="logoutAdmin()" class="text-xs text-slate-400 hover:text-rose-400 font-mono">Logout</button>
+    </div>
+
+    <!-- Missing & Late Staff Alert -->
+    <div class="bg-gradient-to-br from-rose-950/40 to-slate-950 border border-rose-800/70 rounded-2xl p-4 mb-4 shadow-lg">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🚨</span> Missing & Late Staff Alert
+        </span>
+        <span class="text-[10px] text-slate-400 font-mono">Shift Grace Over</span>
+      </div>
+      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
+        Check karein kaunse plant rooms (DG, Boiler, HTP) ya critical technicians abhi tak absent hain.
+      </p>
+
+      <button id="alertBtn" onclick="generateMissingStaffWhatsAppAlert()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-xl shadow flex items-center justify-center gap-2 transition active:scale-95">
+        <span>⚠️</span> SCAN & BROADCAST MISSING STAFF
+      </button>
+      <div id="missingAlertStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
     </div>
 
     <!-- Monthly Salary & Duty Hours Exporter -->
@@ -56,7 +75,7 @@
       <div id="exportStatus" class="hidden text-[11px] text-center font-mono"></div>
     </div>
 
-    <!-- WhatsApp Group Broadcast -->
+    <!-- 1-Click WhatsApp Group Broadcast -->
     <div class="bg-gradient-to-br from-emerald-950/60 to-slate-950 border border-emerald-800/80 rounded-2xl p-4 mb-4 shadow-lg">
       <div class="flex items-center justify-between mb-1.5">
         <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -120,7 +139,6 @@
           </div>
         </div>
 
-        <!-- Custom Trade Text Field (Shown only when selected) -->
         <div id="customTradeBox" class="hidden">
           <input type="text" id="addCustomTradeInput" placeholder="Naya Trade Name Type Karein (e.g. AC Technician)" class="w-full bg-slate-900 border border-emerald-600 rounded-lg px-3 py-2 text-emerald-400 focus:outline-none">
         </div>
@@ -213,8 +231,9 @@
       </div>
     </div>
 
+    <!-- Footer -->
     <div class="pt-2 text-center border-t border-slate-800">
-      <p class="text-[10px] text-slate-400 uppercase font-mono tracking-wider">System Architect & Super Admin: Sandeep Singh (J-5383-CGC)</p>
+      <p class="text-[10px] text-slate-400 uppercase font-mono tracking-wider">System Architect & Super Admin: Sandeep Singh (J-5383)</p>
     </div>
   </div>
 
@@ -486,6 +505,65 @@
       }
     }
 
+    async function generateMissingStaffWhatsAppAlert() {
+      const btn = document.getElementById('alertBtn');
+      const status = document.getElementById('missingAlertStatus');
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳</span> Scanning Attendance...`;
+      status.classList.remove('hidden');
+      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
+      status.innerText = "Checking unpunched plant & maintenance staff...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "GET_MISSING_ALERTS", pin: authenticatedPin })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          if (data.missingCount === 0) {
+            status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
+            status.innerText = "✔ All registered staff are present on duty!";
+          } else {
+            status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+            status.innerText = `${data.missingCount} staff members absent. Opening WhatsApp...`;
+
+            let msg = `🚨 *CGC MAINTENANCE - ABSENCE / LATE ALERT*\n`;
+            msg += `⏰ *Alert Time:* ${data.currentTime}\n`;
+            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `⚠️ *Total Unpunched Staff:* ${data.missingCount}\n\n`;
+            
+            data.missingStaff.slice(0, 15).forEach((m, idx) => {
+              msg += `${idx + 1}. *${m.name}* (${m.trade}) - ID: ${m.id}\n`;
+            });
+
+            if (data.missingStaff.length > 15) {
+              msg += `_...aur ${data.missingStaff.length - 15} log baki hain._\n`;
+            }
+
+            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `*Action Required:* Kripya plant room backups assign karein.\n`;
+            msg += `_Reported via Admin Console_`;
+
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            window.open(whatsappUrl, '_blank');
+          }
+        } else {
+          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+          status.innerText = "Error: " + data.message;
+        }
+      } catch (err) {
+        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+        status.innerText = "Network Error!";
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>⚠️</span> SCAN & BROADCAST MISSING STAFF`;
+      }
+    }
+
     async function shareLiveReportToWhatsApp() {
       const btn = document.getElementById('broadcastBtn');
       const status = document.getElementById('broadcastStatus');
@@ -517,7 +595,7 @@
           msg += `🔴 *Off-Duty Punches:* ${data.offDutyPunches}\n`;
           msg += `━━━━━━━━━━━━━━━━━━━━\n`;
           msg += `👨‍💼 *Report Generated By:* ${data.generatedBy}\n`;
-          msg += `_System Architect & Super Admin: Sandeep Singh (J-5383-CGC)_`;
+          msg += `_System Architect & Super Admin: Sandeep Singh (J-5383)_`;
 
           const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
           window.open(whatsappUrl, '_blank');
