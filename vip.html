@@ -84,7 +84,7 @@
         <span>📷</span> SCAN LOCATION QR CODE
       </button>
 
-      <!-- Quick Direct Select (Optional if QR not in front) -->
+      <!-- Quick Direct Select -->
       <div class="pt-2 border-t border-slate-800">
         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Or Direct Location Punch (Without QR Paper):</label>
         <div class="flex gap-2">
@@ -104,6 +104,17 @@
     <!-- Status Display -->
     <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
 
+    <!-- WhatsApp Post Options (Appears automatically after punch) -->
+    <div id="whatsappShareBox" class="hidden mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/80 rounded-xl space-y-2">
+      <p class="text-[11px] text-emerald-300 font-bold text-center uppercase tracking-wider">📢 Post Attendance to WhatsApp Group</p>
+      <button onclick="sharePunchWithPhoto()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+        <span>📲</span> POST TO WHATSAPP (WITH PHOTO)
+      </button>
+      <button onclick="sharePunchTextOnly()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95">
+        <span>💬</span> Post Text Slip Only
+      </button>
+    </div>
+
     <!-- Footer -->
     <div class="mt-5 pt-3 text-center border-t border-slate-800">
       <p class="text-[10px] text-slate-500 uppercase font-mono">System Architect: Sandeep Singh</p>
@@ -120,6 +131,8 @@
     let scannedSecret = "";
     let userLat = 30.7499;
     let userLng = 76.6432;
+    let lastCapturedPhoto = "";
+    let lastWhatsAppMessage = "";
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -155,6 +168,7 @@
       document.getElementById('qrBox').classList.remove('hidden');
       document.getElementById('actionButtons').classList.add('hidden');
       document.getElementById('statusBox').classList.add('hidden');
+      document.getElementById('whatsappShareBox').classList.add('hidden');
 
       html5QrCode = new Html5Qrcode("reader");
       html5QrCode.start(
@@ -191,6 +205,7 @@
         alert("Pehle Employee ID enter karein!");
         return;
       }
+      document.getElementById('whatsappShareBox').classList.add('hidden');
       scannedSecret = document.getElementById('quickQrSelect').value;
       startSelfieCapture();
     }
@@ -227,6 +242,7 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const base64Photo = canvas.toDataURL('image/jpeg', 0.65);
+            lastCapturedPhoto = base64Photo;
 
             stream.getTracks().forEach(track => track.stop());
             camBox.classList.add('hidden');
@@ -269,6 +285,23 @@
         document.getElementById('actionButtons').classList.remove('hidden');
 
         if (data.status === "success") {
+          const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+          const badgeIcon = data.dutyType === "ON-DUTY" ? "🟢" : "🔴";
+
+          lastWhatsAppMessage =
+            `${badgeIcon} *CGC MAINTENANCE ATTENDANCE*\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `👤 *Name:* ${data.name}\n` +
+            `🆔 *Emp ID:* ${empId}\n` +
+            `🛠 *Trade:* ${data.trade}\n` +
+            `📌 *Duty:* ${data.dutyType} (${shift})\n` +
+            `📍 *Location:* ${data.locationName}\n` +
+            `🕒 *Time:* ${data.time}\n` +
+            `📅 *Date:* ${todayStr}\n` +
+            `✅ *Status:* ${data.punctuality}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `_Verified via Digital Workforce Portal_`;
+
           showStatus(
             `✅ <b>PUNCH RECORDED SUCCESSFULLY!</b><br>` +
             `👤 ${data.name} (${data.trade})<br>` +
@@ -277,6 +310,8 @@
             `📌 Status: <b>${data.punctuality}</b>`,
             "success"
           );
+
+          document.getElementById('whatsappShareBox').classList.remove('hidden');
         } else {
           showStatus(`❌ Error: ${data.message}`, "error");
         }
@@ -284,6 +319,33 @@
         document.getElementById('actionButtons').classList.remove('hidden');
         showStatus("❌ Network Error! Connection check karein.", "error");
       }
+    }
+
+    async function sharePunchWithPhoto() {
+      if (!lastWhatsAppMessage) return;
+      try {
+        if (lastCapturedPhoto && navigator.canShare) {
+          const res = await fetch(lastCapturedPhoto);
+          const blob = await res.blob();
+          const file = new File([blob], "Attendance_Selfie.jpg", { type: "image/jpeg" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              text: lastWhatsAppMessage
+            });
+            return;
+          }
+        }
+      } catch (e) {
+        console.log("Fallback to text share");
+      }
+      sharePunchTextOnly();
+    }
+
+    function sharePunchTextOnly() {
+      if (!lastWhatsAppMessage) return;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(lastWhatsAppMessage)}`;
+      window.open(url, '_blank');
     }
   </script>
 </body>
