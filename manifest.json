@@ -1,7 +1,8 @@
 {
+  "id": "cgc-worker-app-v1",
   "name": "CGC Workforce Attendance",
   "short_name": "CGC Attendance",
-  "start_url": "./index.html",
+  "start_url": "./index.html?app=worker",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#059669",
