@@ -1,7 +1,8 @@
 {
+  "id": "cgc-admin-app-v1",
   "name": "CGC Admin Command Center",
   "short_name": "CGC Admin",
-  "start_url": "./admin.html",
+  "start_url": "./admin.html?app=admin",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#0891b2",
