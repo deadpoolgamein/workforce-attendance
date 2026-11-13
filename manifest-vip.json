@@ -1,7 +1,8 @@
 {
+  "id": "cgc-vip-app-v1",
   "name": "CGC Special Access Portal",
   "short_name": "VIP Punch",
-  "start_url": "./vip.html",
+  "start_url": "./vip.html?app=vip",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#4f46e5",
