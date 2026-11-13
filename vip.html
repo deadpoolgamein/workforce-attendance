@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CGC Workforce Portal - Special Access</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center font-sans">
+
+  <div class="w-full max-w-md bg-slate-900 border border-indigo-800/80 rounded-2xl shadow-2xl p-5">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+      <div>
+        <span class="text-[10px] tracking-widest uppercase bg-indigo-950 text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-700 font-mono font-bold">
+          ⚡ Smart Time-Slot Active
+        </span>
+        <h1 class="text-lg font-black text-white mt-1">PRIVATE ATTENDANCE PORTAL</h1>
+      </div>
+      <div class="text-right font-mono text-[10px] text-slate-400">
+        <div>IN: 08:40 - 08:59 AM</div>
+        <div>OUT: 05:15 - 05:32 PM</div>
+      </div>
+    </div>
+
+    <!-- Form Inputs -->
+    <div class="space-y-3 text-xs mb-4">
+      <div>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Employee ID</label>
+        <input type="text" id="empId" value="J-5383" placeholder="Enter Emp ID (e.g. J-5383)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase text-sm focus:outline-none focus:border-indigo-500">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Duty Action</label>
+          <select id="dutyType" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-emerald-400 font-bold focus:outline-none focus:border-indigo-500">
+            <option value="ON-DUTY">🟢 ON-DUTY (8:40-8:59)</option>
+            <option value="OFF-DUTY">🔴 OFF-DUTY (5:15-5:32)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Shift</label>
+          <select id="shift" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="General">General Shift</option>
+            <option value="Morning">Morning Shift</option>
+            <option value="Afternoon">Afternoon Shift</option>
+            <option value="Night">Night Shift</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Scanner Box -->
+    <div id="qrBox" class="hidden mb-4 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2">
+      <div id="reader" class="w-full rounded-lg overflow-hidden"></div>
+      <button onclick="stopQrScanner()" class="w-full mt-2 py-2 bg-rose-600 text-white font-bold text-xs rounded-lg">Cancel QR Scan</button>
+    </div>
+
+    <!-- Live Front Camera Box for Selfie -->
+    <div id="cameraBox" class="hidden mb-4 bg-slate-950 border border-indigo-700 rounded-xl p-3 text-center">
+      <p id="countdownText" class="text-xs font-mono text-indigo-400 font-bold mb-2">Position Face for Verification...</p>
+      <video id="video" autoplay playsinline class="w-full h-56 object-cover rounded-lg border border-slate-800 bg-black"></video>
+      <canvas id="canvas" class="hidden"></canvas>
+    </div>
+
+    <!-- Action Buttons -->
+    <div id="actionButtons" class="space-y-2.5">
+      <button onclick="startQrFlow()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+        <span>📷</span> SCAN LOCATION QR CODE
+      </button>
+
+      <!-- Quick Direct Select (Optional if QR not in front) -->
+      <div class="pt-2 border-t border-slate-800">
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Or Direct Location Punch (Without QR Paper):</label>
+        <div class="flex gap-2">
+          <select id="quickQrSelect" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 font-mono">
+            <option value="CGC_LOC_WORKSHOP_1">Workshop (CGC_LOC_WORKSHOP_1)</option>
+            <option value="CGC_LOC_DG_ROOM_1">Dg Room (CGC_LOC_DG_ROOM_1)</option>
+            <option value="CGC_LOC_BOILER_ROOM_1">Boiler (CGC_LOC_BOILER_ROOM_1)</option>
+            <option value="CGC_LOC_HTP_PLANT_1">Htp plant (CGC_LOC_HTP_PLANT_1)</option>
+          </select>
+          <button onclick="triggerQuickLocationPunch()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition active:scale-95">
+            Punch
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Display -->
+    <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
+
+    <!-- Footer -->
+    <div class="mt-5 pt-3 text-center border-t border-slate-800">
+      <p class="text-[10px] text-slate-500 uppercase font-mono">System Architect: Sandeep Singh</p>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
+    // ==========================================
+
+    let html5QrCode = null;
+    let scannedSecret = "";
+    let userLat = 30.7499;
+    let userLng = 76.6432;
+
+    // Fetch GPS in background
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+        },
+        err => { console.log("Using default campus coordinates."); },
+        { enableHighAccuracy: true }
+      );
+    }
+
+    function showStatus(msg, type) {
+      const box = document.getElementById('statusBox');
+      box.classList.remove('hidden');
+      if (type === "loading") {
+        box.className = "mt-4 p-3 rounded-xl border border-yellow-700 bg-yellow-950/40 text-yellow-300 text-xs font-mono text-center";
+      } else if (type === "success") {
+        box.className = "mt-4 p-3 rounded-xl border border-emerald-700 bg-emerald-950/50 text-emerald-300 text-xs font-mono text-center";
+      } else {
+        box.className = "mt-4 p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
+      }
+      box.innerHTML = msg;
+    }
+
+    function startQrFlow() {
+      const empId = document.getElementById('empId').value.trim();
+      if (!empId) {
+        alert("Pehle Employee ID enter karein!");
+        return;
+      }
+
+      document.getElementById('qrBox').classList.remove('hidden');
+      document.getElementById('actionButtons').classList.add('hidden');
+      document.getElementById('statusBox').classList.add('hidden');
+
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          scannedSecret = decodedText.trim();
+          stopQrScanner();
+          startSelfieCapture();
+        },
+        (err) => {}
+      ).catch(err => {
+        alert("Camera start nahi ho paya: " + err);
+        stopQrScanner();
+      });
+    }
+
+    function stopQrScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          document.getElementById('qrBox').classList.add('hidden');
+          document.getElementById('actionButtons').classList.remove('hidden');
+        }).catch(() => {});
+      } else {
+        document.getElementById('qrBox').classList.add('hidden');
+        document.getElementById('actionButtons').classList.remove('hidden');
+      }
+    }
+
+    function triggerQuickLocationPunch() {
+      const empId = document.getElementById('empId').value.trim();
+      if (!empId) {
+        alert("Pehle Employee ID enter karein!");
+        return;
+      }
+      scannedSecret = document.getElementById('quickQrSelect').value;
+      startSelfieCapture();
+    }
+
+    async function startSelfieCapture() {
+      const camBox = document.getElementById('cameraBox');
+      const video = document.getElementById('video');
+      const countText = document.getElementById('countdownText');
+
+      document.getElementById('actionButtons').classList.add('hidden');
+      camBox.classList.remove('hidden');
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } },
+          audio: false
+        });
+        video.srcObject = stream;
+
+        let count = 3;
+        countText.innerText = `Capturing Selfie in ${count}...`;
+
+        const timer = setInterval(() => {
+          count--;
+          if (count > 0) {
+            countText.innerText = `Capturing Selfie in ${count}...`;
+          } else {
+            clearInterval(timer);
+            countText.innerText = "Processing Attendance...";
+
+            const canvas = document.getElementById('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const base64Photo = canvas.toDataURL('image/jpeg', 0.65);
+
+            stream.getTracks().forEach(track => track.stop());
+            camBox.classList.add('hidden');
+            submitVipAttendance(base64Photo);
+          }
+        }, 1000);
+
+      } catch (err) {
+        alert("Front camera error: " + err.message);
+        camBox.classList.add('hidden');
+        document.getElementById('actionButtons').classList.remove('hidden');
+      }
+    }
+
+    async function submitVipAttendance(photoData) {
+      const empId = document.getElementById('empId').value.trim().toUpperCase();
+      const dutyType = document.getElementById('dutyType').value;
+      const shift = document.getElementById('shift').value;
+
+      showStatus("⏳ Generating natural time-slot & syncing with Sheet...", "loading");
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            empId: empId,
+            dutyType: dutyType,
+            shift: shift,
+            punchMode: "QR",
+            scannedQr: scannedSecret,
+            latitude: userLat,
+            longitude: userLng,
+            photo: photoData,
+            randomTimeMode: true
+          })
+        });
+
+        const data = await res.json();
+        document.getElementById('actionButtons').classList.remove('hidden');
+
+        if (data.status === "success") {
+          showStatus(
+            `✅ <b>PUNCH RECORDED SUCCESSFULLY!</b><br>` +
+            `👤 ${data.name} (${data.trade})<br>` +
+            `📍 Location: <b>${data.locationName}</b><br>` +
+            `🕒 Logged Time: <b>${data.time}</b><br>` +
+            `📌 Status: <b>${data.punctuality}</b>`,
+            "success"
+          );
+        } else {
+          showStatus(`❌ Error: ${data.message}`, "error");
+        }
+      } catch (err) {
+        document.getElementById('actionButtons').classList.remove('hidden');
+        showStatus("❌ Network Error! Connection check karein.", "error");
+      }
+    }
+  </script>
+</body>
+</html>
