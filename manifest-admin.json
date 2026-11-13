@@ -1,0 +1,17 @@
+{
+  "name": "CGC Admin Command Center",
+  "short_name": "CGC Admin",
+  "start_url": "./admin.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#0891b2",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2345/2345338.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
