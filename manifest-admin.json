@@ -1,8 +1,9 @@
 {
-  "id": "cgc-admin-app-v1",
+  "id": "/workforce-attendance/admin-app-v2",
   "name": "CGC Admin Command Center",
   "short_name": "CGC Admin",
-  "start_url": "./admin.html?app=admin",
+  "start_url": "./admin.html?mode=admin",
+  "scope": "./admin.html",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#0891b2",
