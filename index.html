@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CGC Workforce Attendance</title>
+
   <!-- PWA App Install Tags -->
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#059669">
@@ -15,121 +16,96 @@
       });
     }
   </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    #reader video, #selfieVideo {
-      width: 100% !important;
-      height: auto !important;
-      max-height: 360px !important;
-      object-fit: cover !important;
-      border-radius: 0.75rem;
-    }
-  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 flex flex-col items-center justify-center font-sans relative">
-
-  <!-- Fullscreen Uploading Overlay -->
-  <div id="loadingOverlay" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
-    <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-    <p id="loadingTitle" class="text-sm font-bold text-white tracking-wide">Syncing Attendance...</p>
-    <p id="loadingSub" class="text-xs text-slate-400 mt-1 text-center">Photo & GPS log verify ho rahe hain, screen band na karein</p>
-  </div>
-
-  <!-- Selfie Capture Modal Popup -->
-  <div id="selfieModal" class="hidden fixed inset-0 bg-black/95 z-40 flex flex-col items-center justify-center p-4">
-    <div class="w-full max-w-sm bg-slate-900 border border-emerald-600/80 rounded-2xl p-4 text-center">
-      <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-3 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">Step 2: Face Verification</span>
-      <h3 class="text-base font-bold text-white mt-2 mb-1">Camera ke samne dekhein</h3>
-      <p class="text-xs text-slate-300 mb-3">Selfie capture ho rahi hai: <span id="countdownText" class="font-mono text-emerald-400 font-bold text-sm">3s</span></p>
-
-      <div class="relative bg-black rounded-xl overflow-hidden border border-slate-700 min-h-[260px] flex items-center justify-center mb-3">
-        <video id="selfieVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
-      </div>
-
-      <p class="text-[10px] text-slate-400">Purnroop se camera ke samne sidhe khade rahein</p>
-    </div>
-  </div>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center font-sans">
 
   <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
     
     <!-- Header -->
-    <div class="border-b border-slate-800 pb-3 mb-3 text-center">
-      <div class="flex items-center justify-center gap-2 mb-1">
-        <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-3 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">150m Geofenced</span>
-        <span class="text-[10px] tracking-widest uppercase bg-cyan-950 text-cyan-400 px-3 py-0.5 rounded-full border border-cyan-800 font-mono font-bold">Anti-Proxy Active</span>
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+      <div>
+        <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">
+          📍 150m Geofence Active
+        </span>
+        <h1 class="text-lg font-black text-white mt-1">CGC WORKFORCE PORTAL</h1>
+        <p class="text-[11px] text-slate-400">Department of Maintenance Services</p>
       </div>
-      <h1 class="text-xl font-black text-white tracking-wide uppercase">CGC WORKFORCE ATTENDANCE</h1>
-      <p class="text-[11px] text-slate-400">Mechanical • Electrical • Plumbing • Carpentry</p>
+      <a href="./admin.html" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 font-mono">
+        Admin 🔒
+      </a>
     </div>
 
-    <!-- Duty Toggle -->
-    <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl mb-3 border border-slate-800">
-      <button id="btnOnDuty" onclick="setDuty('ON-DUTY')" class="py-2.5 rounded-lg font-bold text-xs bg-emerald-600 text-white shadow-md transition">ON-DUTY (In)</button>
-      <button id="btnOffDuty" onclick="setDuty('OFF-DUTY')" class="py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition">OFF-DUTY (Out)</button>
-    </div>
-
-    <!-- Shift Selection -->
-    <div class="mb-3">
-      <label class="block text-[11px] font-bold text-slate-400 mb-1 tracking-wider">ASSIGNED SHIFT</label>
-      <select id="shiftSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-400 focus:outline-none focus:border-emerald-500">
-        <option value="General">General Shift (09:00 AM - 05:00 PM)</option>
-        <option value="Morning">Morning Shift (06:00 AM - 02:00 PM)</option>
-        <option value="Afternoon">Afternoon Shift (02:00 PM - 10:00 PM)</option>
-        <option value="Night">Night Shift (10:00 PM - 06:00 AM)</option>
-      </select>
-    </div>
-
-    <!-- Mode Selector Tabs -->
-    <div class="flex border-b border-slate-800 mb-3 text-xs font-semibold">
-      <button id="tabQr" onclick="switchMode('QR')" class="flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400">Gate QR Scan</button>
-      <button id="tabManual" onclick="switchMode('MANUAL')" class="flex-1 pb-2 border-b-2 border-transparent text-slate-400">Mobile Direct Punch</button>
-    </div>
-
-    <!-- Emp ID Input -->
-    <div class="mb-3">
-      <label class="block text-[11px] font-bold text-slate-400 mb-1 tracking-wider">EMPLOYEE ID / BADGE NO</label>
-      <input type="text" id="empId" placeholder="e.g. MEC-W01, J-5383-CGC" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-base font-mono font-bold tracking-wider text-emerald-400 uppercase focus:outline-none focus:border-emerald-500">
-    </div>
-
-    <!-- Section 1: Gate QR Scanner Viewport with Flip Button -->
-    <div id="qrSection">
-      <div class="flex items-center justify-between mb-1.5">
-        <span id="camIndicator" class="text-[10px] text-slate-400 font-mono">Camera: Detecting...</span>
-        <button type="button" onclick="toggleCameraSwitch()" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold transition active:scale-95 shadow">
-          <span>🔄</span> Flip Camera
-        </button>
+    <!-- Form Inputs -->
+    <div class="space-y-3 text-xs mb-4">
+      <div>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Employee ID</label>
+        <input type="text" id="empId" placeholder="Enter Emp ID (e.g. MEC-W01)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase text-sm focus:outline-none focus:border-emerald-500">
       </div>
 
-      <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 mb-2 min-h-[260px] flex items-center justify-center">
-        <div id="reader" class="w-full"></div>
-        <div id="gpsBadge" class="absolute bottom-2 left-2 bg-black/80 px-2.5 py-0.5 rounded text-[10px] text-yellow-300 font-mono border border-slate-700 z-10">
-          GPS: Acquiring fix...
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Duty Action</label>
+          <select id="dutyType" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
+            <option value="ON-DUTY">🟢 ON-DUTY (In)</option>
+            <option value="OFF-DUTY">🔴 OFF-DUTY (Out)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Shift</label>
+          <select id="shift" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="General">General (9AM-5PM)</option>
+            <option value="Morning">Morning (6AM-2PM)</option>
+            <option value="Afternoon">Afternoon (2PM-10PM)</option>
+            <option value="Night">Night (10PM-6AM)</option>
+          </select>
         </div>
       </div>
-      <p id="instructionText" class="text-center text-[10px] text-slate-400 mb-3">Workshop Gate ka official printout scan karein</p>
     </div>
 
-    <!-- Section 2: Mobile Direct Punch -->
-    <div id="manualSection" class="hidden mb-3">
-      <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl mb-3 text-center">
-        <p class="text-xs text-slate-300 font-medium">Bina QR ke Direct Mobile Punch</p>
-        <p class="text-[10px] text-amber-400 mt-0.5">(Subject to Admin Permission)</p>
-      </div>
-      <button onclick="handleManualPunch()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-[0.98]">
-        SUBMIT MOBILE ATTENDANCE
+    <!-- QR Scanner Box -->
+    <div id="qrBox" class="hidden mb-4 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2">
+      <div id="reader" class="w-full rounded-lg overflow-hidden"></div>
+      <button onclick="stopQrScanner()" class="w-full mt-2 py-2 bg-rose-600 text-white font-bold text-xs rounded-lg">Cancel QR Scan</button>
+    </div>
+
+    <!-- Live Front Camera Box for Selfie -->
+    <div id="cameraBox" class="hidden mb-4 bg-slate-950 border border-emerald-700 rounded-xl p-3 text-center">
+      <p id="countdownText" class="text-xs font-mono text-emerald-400 font-bold mb-2">Position Face for Verification...</p>
+      <video id="video" autoplay playsinline class="w-full h-56 object-cover rounded-lg border border-slate-800 bg-black"></video>
+      <canvas id="canvas" class="hidden"></canvas>
+    </div>
+
+    <!-- Action Buttons -->
+    <div id="actionButtons" class="space-y-2.5">
+      <button onclick="startQrFlow()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+        <span>📷</span> SCAN GATE QR CODE
+      </button>
+
+      <button onclick="startManualFlow()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition active:scale-95">
+        <span>📱</span> Mobile Direct Punch (If Allowed)
       </button>
     </div>
 
-    <canvas id="hiddenCanvas" class="hidden"></canvas>
+    <!-- Status Display -->
+    <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
 
-    <!-- Feedback Message Box -->
-    <div id="logMessage" class="hidden mb-3 p-3 rounded-xl text-center text-xs font-medium"></div>
+    <!-- WhatsApp Post Options (Appears automatically after punch) -->
+    <div id="whatsappShareBox" class="hidden mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/80 rounded-xl space-y-2">
+      <p class="text-[11px] text-emerald-300 font-bold text-center uppercase tracking-wider">📢 Post Attendance to WhatsApp Group</p>
+      <button onclick="sharePunchWithPhoto()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+        <span>📲</span> POST TO WHATSAPP (WITH PHOTO)
+      </button>
+      <button onclick="sharePunchTextOnly()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95">
+        <span>💬</span> Post Text Slip Only
+      </button>
+    </div>
 
-    <!-- Owner Branding -->
-    <div class="pt-2 border-t border-slate-800/80 text-center">
-      <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">System Architect & Admin</p>
-      <p class="text-xs font-bold text-emerald-400 tracking-wide font-mono mt-0.5">SANDEEP SINGH • EMP ID: J-5383-CGC</p>
+    <!-- Footer -->
+    <div class="mt-5 pt-3 text-center border-t border-slate-800">
+      <p class="text-[10px] text-slate-500 uppercase font-mono">Developed & Managed by Sandeep Singh</p>
     </div>
   </div>
 
@@ -139,311 +115,241 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
     // ==========================================
 
-    let dutyType = "ON-DUTY";
-    let activeMode = "QR";
-    let currentCoords = null;
-    let isProcessing = false;
     let html5QrCode = null;
-    let cameraList = [];
-    let currentCamIndex = 0;
-    let selfieStream = null;
+    let currentPunchMode = "QR";
+    let scannedSecret = "";
+    let userLat = null;
+    let userLng = null;
+    let lastCapturedPhoto = "";
+    let lastWhatsAppMessage = "";
 
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(
-        pos => {
-          currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          const badge = document.getElementById('gpsBadge');
-          if (badge) {
-            badge.innerText = `GPS Fixed (±${Math.round(pos.coords.accuracy)}m)`;
-            badge.className = "absolute bottom-2 left-2 bg-emerald-950/90 border border-emerald-600 px-2.5 py-0.5 rounded text-[10px] text-emerald-300 font-mono z-10";
-          }
-        },
-        err => {
-          const badge = document.getElementById('gpsBadge');
-          if (badge) {
-            badge.innerText = "GPS Error: Location Blocked";
-            badge.className = "absolute bottom-2 left-2 bg-rose-950/90 border border-rose-600 px-2.5 py-0.5 rounded text-[10px] text-rose-300 font-mono z-10";
-          }
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    }
-
-    function setDuty(type) {
-      dutyType = type;
-      if (type === 'ON-DUTY') {
-        document.getElementById('btnOnDuty').className = "py-2.5 rounded-lg font-bold text-xs bg-emerald-600 text-white shadow-md transition";
-        document.getElementById('btnOffDuty').className = "py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition";
-      } else {
-        document.getElementById('btnOffDuty').className = "py-2.5 rounded-lg font-bold text-xs bg-rose-600 text-white shadow-md transition";
-        document.getElementById('btnOnDuty').className = "py-2.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition";
+    // Request Live GPS Location
+    function refreshGpsLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+          },
+          err => { console.warn("GPS Permission Needed"); },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
       }
     }
+    refreshGpsLocation();
 
-    function switchMode(mode) {
-      activeMode = mode;
-      if (mode === 'QR') {
-        document.getElementById('qrSection').classList.remove('hidden');
-        document.getElementById('manualSection').classList.add('hidden');
-        document.getElementById('tabQr').className = "flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400";
-        document.getElementById('tabManual').className = "flex-1 pb-2 border-b-2 border-transparent text-slate-400";
+    function showStatus(msg, type) {
+      const box = document.getElementById('statusBox');
+      box.classList.remove('hidden');
+      if (type === "loading") {
+        box.className = "mt-4 p-3 rounded-xl border border-yellow-700 bg-yellow-950/40 text-yellow-300 text-xs font-mono text-center";
+      } else if (type === "success") {
+        box.className = "mt-4 p-3 rounded-xl border border-emerald-700 bg-emerald-950/50 text-emerald-300 text-xs font-mono text-center";
       } else {
-        document.getElementById('qrSection').classList.add('hidden');
-        document.getElementById('manualSection').classList.remove('hidden');
-        document.getElementById('tabManual').className = "flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400";
-        document.getElementById('tabQr').className = "flex-1 pb-2 border-b-2 border-transparent text-slate-400";
+        box.className = "mt-4 p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
       }
+      box.innerHTML = msg;
     }
 
-    // Capture Selfie from Front Camera
-    async function captureWorkerSelfie() {
-      return new Promise(async (resolve) => {
-        const modal = document.getElementById('selfieModal');
-        const video = document.getElementById('selfieVideo');
-        const countdown = document.getElementById('countdownText');
+    function startQrFlow() {
+      const empId = document.getElementById('empId').value.trim();
+      if (!empId) {
+        alert("Pehle apna Employee ID enter karein!");
+        return;
+      }
+      refreshGpsLocation();
+      currentPunchMode = "QR";
 
-        modal.classList.remove('hidden');
+      document.getElementById('qrBox').classList.remove('hidden');
+      document.getElementById('actionButtons').classList.add('hidden');
+      document.getElementById('statusBox').classList.add('hidden');
+      document.getElementById('whatsappShareBox').classList.add('hidden');
 
-        try {
-          selfieStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" },
-            audio: false
-          });
-          video.srcObject = selfieStream;
-          await video.play();
-
-          let count = 3;
-          countdown.innerText = count + "s";
-
-          const timer = setInterval(() => {
-            count--;
-            if (count > 0) {
-              countdown.innerText = count + "s";
-            } else {
-              clearInterval(timer);
-              
-              // Draw snapshot to canvas
-              const canvas = document.getElementById('hiddenCanvas');
-              canvas.width = video.videoWidth || 480;
-              canvas.height = video.videoHeight || 480;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              const photoData = canvas.toDataURL('image/jpeg', 0.5);
-
-              // Stop front cam
-              if (selfieStream) {
-                selfieStream.getTracks().forEach(t => t.stop());
-                selfieStream = null;
-              }
-              modal.classList.add('hidden');
-              resolve(photoData);
-            }
-          }, 1000);
-
-        } catch (err) {
-          modal.classList.add('hidden');
-          resolve("No Photo");
-        }
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          scannedSecret = decodedText.trim();
+          stopQrScanner();
+          startSelfieCapture();
+        },
+        (err) => {}
+      ).catch(err => {
+        alert("Back camera start nahi ho paya: " + err);
+        stopQrScanner();
       });
     }
 
-    async function sendAttendance(mode, scannedText, photoBase64) {
-      const empId = document.getElementById('empId').value.trim();
-      const shift = document.getElementById('shiftSelect').value;
-      const log = document.getElementById('logMessage');
-      const loader = document.getElementById('loadingOverlay');
+    function stopQrScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          document.getElementById('qrBox').classList.add('hidden');
+          document.getElementById('actionButtons').classList.remove('hidden');
+        }).catch(() => {});
+      } else {
+        document.getElementById('qrBox').classList.add('hidden');
+        document.getElementById('actionButtons').classList.remove('hidden');
+      }
+    }
 
-      loader.classList.remove('hidden');
+    function startManualFlow() {
+      const empId = document.getElementById('empId').value.trim();
+      if (!empId) {
+        alert("Pehle apna Employee ID enter karein!");
+        return;
+      }
+      refreshGpsLocation();
+      currentPunchMode = "MANUAL";
+      scannedSecret = "";
+      document.getElementById('statusBox').classList.add('hidden');
+      document.getElementById('whatsappShareBox').classList.add('hidden');
+      startSelfieCapture();
+    }
+
+    async function startSelfieCapture() {
+      const camBox = document.getElementById('cameraBox');
+      const video = document.getElementById('video');
+      const countText = document.getElementById('countdownText');
+
+      document.getElementById('actionButtons').classList.add('hidden');
+      camBox.classList.remove('hidden');
 
       try {
-        const payload = {
-          punchMode: mode,
-          empId: empId.toUpperCase(),
-          dutyType: dutyType,
-          shift: shift,
-          latitude: currentCoords ? currentCoords.lat : 0,
-          longitude: currentCoords ? currentCoords.lng : 0,
-          scannedQr: scannedText || "",
-          photo: photoBase64 || "No Photo"
-        };
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } },
+          audio: false
+        });
+        video.srcObject = stream;
 
+        let count = 3;
+        countText.innerText = `Capturing Live Selfie in ${count}...`;
+
+        const timer = setInterval(() => {
+          count--;
+          if (count > 0) {
+            countText.innerText = `Capturing Live Selfie in ${count}...`;
+          } else {
+            clearInterval(timer);
+            countText.innerText = "Verifying Location & Saving...";
+
+            const canvas = document.getElementById('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const base64Photo = canvas.toDataURL('image/jpeg', 0.65);
+            lastCapturedPhoto = base64Photo;
+
+            stream.getTracks().forEach(track => track.stop());
+            camBox.classList.add('hidden');
+            submitWorkerAttendance(base64Photo);
+          }
+        }, 1000);
+
+      } catch (err) {
+        alert("Front camera permission zaroori hai: " + err.message);
+        camBox.classList.add('hidden');
+        document.getElementById('actionButtons').classList.remove('hidden');
+      }
+    }
+
+    async function submitWorkerAttendance(photoData) {
+      const empId = document.getElementById('empId').value.trim().toUpperCase();
+      const dutyType = document.getElementById('dutyType').value;
+      const shift = document.getElementById('shift').value;
+
+      if (userLat === null || userLng === null) {
+        showStatus("❌ GPS Location ON karein aur page refresh karein!", "error");
+        document.getElementById('actionButtons').classList.remove('hidden');
+        return;
+      }
+
+      showStatus("⏳ Verifying Geofence & Recording Attendance...", "loading");
+
+      try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            empId: empId,
+            dutyType: dutyType,
+            shift: shift,
+            punchMode: currentPunchMode,
+            scannedQr: scannedSecret,
+            latitude: userLat,
+            longitude: userLng,
+            photo: photoData
+          })
         });
 
         const data = await res.json();
+        document.getElementById('actionButtons').classList.remove('hidden');
 
         if (data.status === "success") {
-          // Strict 5-minute cooldown per device
-          localStorage.setItem('last_punch_time', Date.now().toString());
+          const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+          const badgeIcon = data.dutyType === "ON-DUTY" ? "🟢" : "🔴";
 
-          log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-emerald-950 border border-emerald-500 text-emerald-300 block";
-          log.innerHTML = `
-            <div class="text-sm font-bold text-emerald-400">✔ ${data.dutyType} RECORDED</div>
-            <div class="mt-0.5">${data.name} (${data.trade})</div>
-            <div class="text-[11px] font-mono text-amber-300 mt-1">Shift: ${shift} • Status: ${data.punctuality}</div>
-            <div class="text-[10px] text-slate-300 font-mono">Time: ${data.time} | Distance: ${data.distance}m</div>
-          `;
-          document.getElementById('empId').value = "";
+          lastWhatsAppMessage =
+            `${badgeIcon} *CGC MAINTENANCE ATTENDANCE*\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `👤 *Name:* ${data.name}\n` +
+            `🆔 *Emp ID:* ${empId}\n` +
+            `🛠 *Trade:* ${data.trade}\n` +
+            `📌 *Duty:* ${data.dutyType} (${shift})\n` +
+            `📍 *Location:* ${data.locationName}\n` +
+            `🕒 *Time:* ${data.time}\n` +
+            `📅 *Date:* ${todayStr}\n` +
+            `✅ *Status:* ${data.punctuality}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `_Verified via Digital Workforce Portal_`;
+
+          showStatus(
+            `✅ <b>ATTENDANCE MARKED!</b><br>` +
+            `👤 ${data.name} (${data.trade})<br>` +
+            `📍 Location: <b>${data.locationName}</b> (${data.distance}m)<br>` +
+            `🕒 Time: <b>${data.time}</b><br>` +
+            `📌 Status: <b>${data.punctuality}</b>`,
+            "success"
+          );
+
+          document.getElementById('whatsappShareBox').classList.remove('hidden');
         } else {
-          log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
-          log.innerText = "✖ " + data.message;
+          showStatus(`❌ ${data.message}`, "error");
         }
       } catch (err) {
-        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
-        log.innerText = "Network Error! Connection re-verify karein.";
-      } finally {
-        loader.classList.add('hidden');
-        setTimeout(() => { isProcessing = false; }, 3000);
+        document.getElementById('actionButtons').classList.remove('hidden');
+        showStatus("❌ Network Error! Internet check karein.", "error");
       }
     }
 
-    async function handleQrDetected(text) {
-      if (isProcessing) return;
-      const empId = document.getElementById('empId').value.trim();
-      const log = document.getElementById('logMessage');
-
-      // 1. Check strict 5-minute device lock
-      const lastPunch = localStorage.getItem('last_punch_time');
-      const nowMs = Date.now();
-      if (lastPunch && (nowMs - parseInt(lastPunch) < 5 * 60 * 1000)) {
-        const remainingSec = Math.ceil((5 * 60 * 1000 - (nowMs - parseInt(lastPunch))) / 1000);
-        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
-        log.innerText = `❌ Cooldown Active: Is phone se abhi punch hua hai. Kripya ${remainingSec}s intezar karein.`;
-        return;
-      }
-
-      if (!empId) {
-        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-amber-950 border border-amber-500 text-amber-300 block";
-        log.innerText = "⚠ Pehle apni Employee ID enter karein!";
-        return;
-      }
-      if (!currentCoords) {
-        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-amber-950 border border-amber-500 text-amber-300 block";
-        log.innerText = "⚠ GPS fix ho raha hai, 2 second rukiye...";
-        return;
-      }
-
-      isProcessing = true;
-
-      // Stop QR scanner video temporarily to free camera hardware for selfie
-      if (html5QrCode && html5QrCode.isScanning) {
-        await html5QrCode.stop();
-      }
-
-      // Step 2: Open Front Camera for actual Face Verification
-      const selfiePhoto = await captureWorkerSelfie();
-
-      // Submit attendance
-      await sendAttendance("QR", text, selfiePhoto);
-
-      // Re-start QR scanner for next worker
-      startCameraByIndex(currentCamIndex);
-    }
-
-    async function handleManualPunch() {
-      const empId = document.getElementById('empId').value.trim();
-      const log = document.getElementById('logMessage');
-
-      const lastPunch = localStorage.getItem('last_punch_time');
-      const nowMs = Date.now();
-      if (lastPunch && (nowMs - parseInt(lastPunch) < 5 * 60 * 1000)) {
-        const remainingSec = Math.ceil((5 * 60 * 1000 - (nowMs - parseInt(lastPunch))) / 1000);
-        log.className = "mb-3 p-3 rounded-xl text-center text-xs font-medium bg-rose-950 border border-rose-500 text-rose-300 block";
-        log.innerText = `❌ Cooldown Active: Kripya ${remainingSec}s intezar karein.`;
-        return;
-      }
-
-      if (!empId) {
-        alert("Employee ID enter karein!");
-        return;
-      }
-
-      isProcessing = true;
-      if (html5QrCode && html5QrCode.isScanning) {
-        await html5QrCode.stop();
-      }
-      const selfiePhoto = await captureWorkerSelfie();
-      await sendAttendance("MANUAL", "", selfiePhoto);
-      startCameraByIndex(currentCamIndex);
-    }
-
-    function getQrBoxDimensions(viewfinderWidth, viewfinderHeight) {
-      let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-      let qrboxSize = Math.floor(minEdge * 0.7);
-      return { width: qrboxSize, height: qrboxSize };
-    }
-
-    async function startCameraByIndex(index) {
-      if (!cameraList.length) return;
-      currentCamIndex = index % cameraList.length;
-      const selectedCam = cameraList[currentCamIndex];
-
-      const indicator = document.getElementById('camIndicator');
-      const isBack = selectedCam.label.toLowerCase().includes('back') || 
-                     selectedCam.label.toLowerCase().includes('rear') || 
-                     selectedCam.label.toLowerCase().includes('environment');
-      indicator.innerText = isBack ? "Active: Back Camera" : "Active: Front Camera";
-
-      if (html5QrCode && html5QrCode.isScanning) {
-        await html5QrCode.stop();
-      }
-
-      if (!html5QrCode) {
-        html5QrCode = new Html5Qrcode("reader");
-      }
-
-      const config = {
-        fps: 15,
-        qrbox: getQrBoxDimensions,
-        videoConstraints: {
-          facingMode: isBack ? "environment" : "user",
-          focusMode: "continuous"
+    async function sharePunchWithPhoto() {
+      if (!lastWhatsAppMessage) return;
+      try {
+        if (lastCapturedPhoto && navigator.canShare) {
+          const res = await fetch(lastCapturedPhoto);
+          const blob = await res.blob();
+          const file = new File([blob], "Attendance_Selfie.jpg", { type: "image/jpeg" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              text: lastWhatsAppMessage
+            });
+            return;
+          }
         }
-      };
-
-      html5QrCode.start(
-        selectedCam.id,
-        config,
-        handleQrDetected,
-        () => {}
-      ).catch(e => {
-        console.error("Camera error:", e);
-      });
-    }
-
-    function toggleCameraSwitch() {
-      if (cameraList.length > 1) {
-        startCameraByIndex(currentCamIndex + 1);
-      } else {
-        alert("Device me ek hi camera detected hai.");
+      } catch (e) {
+        console.log("Fallback to text share");
       }
+      sharePunchTextOnly();
     }
 
-    function initCameraSystem() {
-      Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length > 0) {
-          cameraList = devices;
-          let backIdx = devices.findIndex(d => 
-            d.label.toLowerCase().includes('back') || 
-            d.label.toLowerCase().includes('rear') || 
-            d.label.toLowerCase().includes('environment')
-          );
-          let initialIdx = (backIdx !== -1) ? backIdx : 0;
-          startCameraByIndex(initialIdx);
-        } else {
-          document.getElementById('camIndicator').innerText = "No camera found";
-        }
-      }).catch(err => {
-        document.getElementById('camIndicator').innerText = "Camera access blocked";
-      });
+    function sharePunchTextOnly() {
+      if (!lastWhatsAppMessage) return;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(lastWhatsAppMessage)}`;
+      window.open(url, '_blank');
     }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      initCameraSystem();
-    });
   </script>
 </body>
 </html>
