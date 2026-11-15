@@ -18,6 +18,7 @@
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center font-sans">
 
@@ -47,6 +48,86 @@
         <h1 id="welcomeAdminName" class="text-lg font-black text-white mt-1">MASTER CONTROLS</h1>
       </div>
       <button onclick="logoutAdmin()" class="text-xs text-slate-400 hover:text-rose-400 font-mono">Logout</button>
+    </div>
+
+    <!-- NEW: Location & Printable QR Poster Studio -->
+    <div class="bg-gradient-to-br from-indigo-950/60 to-slate-950 border border-indigo-700/80 rounded-2xl p-4 mb-4 shadow-lg">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🏁</span> Location & QR Poster Studio
+        </span>
+        <span class="text-[10px] text-indigo-300 font-mono">Geofence + Print</span>
+      </div>
+      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
+        Existing locations ka QR print karein ya live GPS se naya gate/plant QR banayein.
+      </p>
+
+      <!-- Select Existing Location to Generate QR -->
+      <div class="mb-3">
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Select Location to View / Print QR</label>
+        <select id="qrLocationSelect" onchange="renderSelectedLocationQr()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
+        </select>
+      </div>
+
+      <!-- Live QR Poster Preview Card -->
+      <div id="qrPreviewCard" class="bg-white text-slate-900 rounded-xl p-4 text-center shadow-inner mb-3">
+        <div class="border-2 border-slate-900 rounded-lg p-3">
+          <p class="text-[10px] font-black tracking-widest uppercase text-slate-600">CHANDIGARH GROUP OF COLLEGES</p>
+          <h3 id="posterLocName" class="text-base font-black text-slate-950 uppercase mt-0.5">WORKSHOP</h3>
+          <p class="text-[10px] font-bold text-emerald-700 uppercase mb-2">Department of Maintenance Services</p>
+          
+          <div id="qrCanvasContainer" class="flex justify-center my-2"></div>
+          
+          <p id="posterQrSecret" class="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 inline-block px-2 py-0.5 rounded border border-slate-300 mt-1">CGC_LOC_WORKSHOP_1</p>
+          <p id="posterCoords" class="text-[9px] font-mono text-slate-500 mt-1">GPS Radius: 150m Geofence Protected</p>
+        </div>
+      </div>
+
+      <!-- Print & Download Poster Buttons -->
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <button onclick="printOfficialQrPoster()" class="py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow flex items-center justify-center gap-1.5 transition active:scale-95">
+          <span>🖨️</span> PRINT A4 POSTER
+        </button>
+        <button onclick="downloadQrPosterPng()" class="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95">
+          <span>⬇️</span> SAVE QR IMAGE
+        </button>
+      </div>
+
+      <!-- Add New Location Accordion -->
+      <div class="pt-3 border-t border-slate-800/90">
+        <button onclick="toggleNewLocForm()" class="w-full text-left text-[11px] font-bold text-emerald-400 flex items-center justify-between py-1">
+          <span>➕ Add New Campus Location / Plant Room</span>
+          <span id="locToggleArrow">▼</span>
+        </button>
+
+        <div id="newLocationForm" class="hidden mt-2.5 space-y-2 text-xs">
+          <input type="text" id="newLocName" placeholder="Location Name (e.g. Mess Block A,Substation)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+          
+          <div class="grid grid-cols-3 gap-1.5">
+            <input type="number" step="any" id="newLocLat" placeholder="Latitude" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 font-mono text-[11px] focus:outline-none">
+            <input type="number" step="any" id="newLocLng" placeholder="Longitude" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 font-mono text-[11px] focus:outline-none">
+            <button type="button" onclick="fillCurrentGpsForLocation()" class="bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 font-bold text-[10px] rounded-lg px-2 py-2 transition">
+              📍 Get Live GPS
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Allowed Radius (Meters)</label>
+              <input type="number" id="newLocRadius" value="150" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
+            </div>
+            <div>
+              <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Custom QR Code (Optional)</label>
+              <input type="text" id="newLocSecret" placeholder="Auto-generated" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-300 font-mono uppercase">
+            </div>
+          </div>
+
+          <button id="saveLocBtn" onclick="saveNewLocationToSheet()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition active:scale-95">
+            Save Location & Generate QR
+          </button>
+          <div id="saveLocStatus" class="hidden text-[11px] text-center font-mono mt-1"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Missing & Late Staff Alert -->
@@ -194,7 +275,7 @@
       <div id="addAdmStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
     </div>
 
-    <!-- Mobile Punch Toggle Card (With Live Status Memory) -->
+    <!-- Mobile Punch Toggle Card -->
     <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-bold text-slate-300">Mobile Direct Punch</span>
@@ -225,7 +306,7 @@
       <div id="pinChangeStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
     </div>
 
-    <!-- Dynamic Cloud Shortcuts (Auto Role-Switching) -->
+    <!-- Dynamic Cloud Shortcuts -->
     <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-bold text-slate-300">Cloud Shortcuts</span>
@@ -271,16 +352,257 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
 
     // Public Sheets & Photos (For Supervisors / Viewers)
-    const PUBLIC_SHEET_URL = "https://docs.google.com/spreadsheets/d/1MkoMROL8seeYB4KgpSRxFVMV8qmMPgHTADy4NF1Ci-8/edit?usp=sharing";
-    const PUBLIC_DRIVE_URL = "https://drive.google.com/drive/folders/1kA3wur3nnLPvoML6S8ahUFJ9a5_XE-LY";
+    const PUBLIC_SHEET_URL = "YOUR_PUBLIC_VIEW_SHEET_URL_HERE";
+    const PUBLIC_DRIVE_URL = "YOUR_PUBLIC_PHOTOS_FOLDER_URL_HERE";
 
     // Master Sheets & Photos (For Super Admin: Sandeep Singh)
-    const MASTER_SHEET_URL = "https://docs.google.com/spreadsheets/d/1KthpLeh5lqCcBNEnmJ3Wfsm14cPbxPiLLO_TpSUYyZ4/edit?usp=sharing";
-    const MASTER_DRIVE_URL = "https://drive.google.com/drive/folders/1aede5nJeuV7o9Vzmfoozg9fZZrvBzoM6";
+    const MASTER_SHEET_URL = "YOUR_MAIN_DATABASE_SHEET_URL_HERE";
+    const MASTER_DRIVE_URL = "https://drive.google.com/drive/folders/YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE";
     // ========================================================
 
     let authenticatedPin = "";
     let currentAdminRole = "";
+    let savedLocations = [
+      { id: "LOC-01", name: "Workshop", qrSecret: "CGC_LOC_WORKSHOP_1", lat: 30.7499, lng: 76.6432, radius: 150 },
+      { id: "LOC-02", name: "Dg Room", qrSecret: "CGC_LOC_DG_ROOM_1", lat: 30.7499, lng: 76.6432, radius: 150 },
+      { id: "LOC-03", name: "Boiler", qrSecret: "CGC_LOC_BOILER_ROOM_1", lat: 30.7499, lng: 76.6432, radius: 150 },
+      { id: "LOC-04", name: "Htp plant", qrSecret: "CGC_LOC_HTP_PLANT_1", lat: 30.7499, lng: 76.6432, radius: 150 }
+    ];
+
+    function populateLocationsDropdown() {
+      const sel = document.getElementById('qrLocationSelect');
+      sel.innerHTML = "";
+      savedLocations.forEach((loc, index) => {
+        const opt = document.createElement('option');
+        opt.value = index;
+        opt.textContent = `${loc.name} (${loc.qrSecret})`;
+        sel.appendChild(opt);
+      });
+      renderSelectedLocationQr();
+    }
+
+    function renderSelectedLocationQr() {
+      const sel = document.getElementById('qrLocationSelect');
+      const loc = savedLocations[sel.value] || savedLocations[0];
+      if (!loc) return;
+
+      document.getElementById('posterLocName').innerText = loc.name;
+      document.getElementById('posterQrSecret').innerText = loc.qrSecret;
+      document.getElementById('posterCoords').innerText = `GPS: ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)} • Radius: ${loc.radius}m`;
+
+      const container = document.getElementById('qrCanvasContainer');
+      container.innerHTML = "";
+      new QRCode(container, {
+        text: loc.qrSecret,
+        width: 180,
+        height: 180,
+        colorDark: "#020617",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    function toggleNewLocForm() {
+      const form = document.getElementById('newLocationForm');
+      const arrow = document.getElementById('locToggleArrow');
+      if (form.classList.contains('hidden')) {
+        form.classList.remove('hidden');
+        arrow.innerText = "▲";
+      } else {
+        form.classList.add('hidden');
+        arrow.innerText = "▼";
+      }
+    }
+
+    function fillCurrentGpsForLocation() {
+      if (!navigator.geolocation) {
+        alert("GPS supported nahi hai!");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          document.getElementById('newLocLat').value = pos.coords.latitude.toFixed(6);
+          document.getElementById('newLocLng').value = pos.coords.longitude.toFixed(6);
+        },
+        err => {
+          alert("GPS Error: Location permission allow karein.");
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+
+    async function saveNewLocationToSheet() {
+      const name = document.getElementById('newLocName').value.trim();
+      const lat = document.getElementById('newLocLat').value.trim();
+      const lng = document.getElementById('newLocLng').value.trim();
+      const radius = document.getElementById('newLocRadius').value.trim() || 150;
+      const customSecret = document.getElementById('newLocSecret').value.trim();
+      const status = document.getElementById('saveLocStatus');
+      const btn = document.getElementById('saveLocBtn');
+
+      if (!name || !lat || !lng) {
+        alert("Location Name aur GPS Coordinates (Lat/Lng) zaroori hain!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Saving Location...";
+      status.classList.remove('hidden');
+      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
+      status.innerText = "Sheet me location save ho rahi hai...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "ADD_LOCATION",
+            pin: authenticatedPin,
+            locName: name,
+            locLat: lat,
+            locLng: lng,
+            locRadius: radius,
+            customSecret: customSecret
+          })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          if (data.locations && data.locations.length > 0) {
+            savedLocations = data.locations;
+          } else if (data.newLocation) {
+            savedLocations.push(data.newLocation);
+          }
+          populateLocationsDropdown();
+          document.getElementById('qrLocationSelect').value = savedLocations.length - 1;
+          renderSelectedLocationQr();
+
+          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
+          status.innerText = "✔ " + data.message;
+          document.getElementById('newLocName').value = "";
+          document.getElementById('newLocSecret').value = "";
+        } else {
+          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (e) {
+        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+        status.innerText = "Network Error!";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Save Location & Generate QR";
+      }
+    }
+
+    function printOfficialQrPoster() {
+      const sel = document.getElementById('qrLocationSelect');
+      const loc = savedLocations[sel.value] || savedLocations[0];
+      const qrImg = document.querySelector('#qrCanvasContainer img') || document.querySelector('#qrCanvasContainer canvas');
+      if (!qrImg) return;
+
+      const imgSrc = qrImg.src || qrImg.toDataURL("image/png");
+      const win = window.open('', '_blank');
+      win.document.write(`
+        <html>
+        <head>
+          <title>CGC QR Poster - ${loc.name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 30px; }
+            .poster { border: 6px solid #0f172a; border-radius: 20px; padding: 35px; max-width: 520px; margin: 0 auto; }
+            .uni { font-size: 16px; font-weight: 900; letter-spacing: 2px; color: #334155; }
+            .dept { font-size: 14px; font-weight: bold; color: #059669; margin-top: 6px; text-transform: uppercase; }
+            .loc { font-size: 34px; font-weight: 900; color: #020617; margin: 18px 0 10px 0; text-transform: uppercase; }
+            .qr-box { margin: 25px auto; display: inline-block; padding: 15px; border: 3px dashed #64748b; border-radius: 16px; }
+            .secret { font-family: monospace; font-size: 15px; font-weight: bold; background: #f1f5f9; padding: 6px 14px; border-radius: 6px; display: inline-block; margin-top: 10px; }
+            .inst { font-size: 14px; color: #1e293b; margin-top: 20px; line-height: 1.6; font-weight: bold; }
+            .footer { font-size: 11px; color: #64748b; margin-top: 25px; border-top: 1px solid #cbd5e1; padding-top: 10px; font-family: monospace; }
+          </style>
+        </head>
+        <body onload="window.print()">
+          <div class="poster">
+            <div class="uni">CHANDIGARH GROUP OF COLLEGES</div>
+            <div class="dept">Department of Maintenance Services</div>
+            <div class="loc">📍 ${loc.name}</div>
+            <div class="qr-box">
+              <img src="${imgSrc}" width="280" height="280" />
+            </div>
+            <br/>
+            <div class="secret">${loc.qrSecret}</div>
+            <div class="inst">
+              1. Open CGC Workforce Attendance App<br/>
+              2. Enter Employee ID & Scan QR Code<br/>
+              3. Verify Live Front Camera Selfie (${loc.radius}m Geofence Active)
+            </div>
+            <div class="footer">Digital Workforce Attendance System • Managed by Sandeep Singh (J-5383)</div>
+          </div>
+        </body>
+        </html>
+      `);
+      win.document.close();
+    }
+
+    function downloadQrPosterPng() {
+      const sel = document.getElementById('qrLocationSelect');
+      const loc = savedLocations[sel.value] || savedLocations[0];
+      const qrCanvas = document.querySelector('#qrCanvasContainer canvas');
+      const qrImg = document.querySelector('#qrCanvasContainer img');
+
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = 600;
+      outCanvas.height = 760;
+      const ctx = outCanvas.getContext('2d');
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, 600, 760);
+
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 12;
+      ctx.strokeRect(24, 24, 552, 712);
+
+      ctx.fillStyle = "#334155";
+      ctx.font = "bold 18px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("CHANDIGARH GROUP OF COLLEGES", 300, 80);
+
+      ctx.fillStyle = "#059669";
+      ctx.font = "bold 15px Arial";
+      ctx.fillText("DEPARTMENT OF MAINTENANCE SERVICES", 300, 110);
+
+      ctx.fillStyle = "#020617";
+      ctx.font = "900 34px Arial";
+      ctx.fillText(loc.name.toUpperCase(), 300, 165);
+
+      const drawAndSave = (imgSource) => {
+        ctx.drawImage(imgSource, 150, 200, 300, 300);
+
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 16px monospace";
+        ctx.fillText(loc.qrSecret, 300, 545);
+
+        ctx.fillStyle = "#334155";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(`Geofence Radius: ${loc.radius}m | Live Selfie Required`, 300, 595);
+        ctx.fillText("Scan via Official CGC Workforce Attendance App", 300, 625);
+
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px monospace";
+        ctx.fillText("System Architect: Sandeep Singh (J-5383)", 300, 700);
+
+        const link = document.createElement('a');
+        link.download = `CGC_QR_${loc.name.replace(/\s+/g, '_')}.png`;
+        link.href = outCanvas.toDataURL("image/png");
+        link.click();
+      };
+
+      if (qrCanvas) {
+        drawAndSave(qrCanvas);
+      } else if (qrImg) {
+        const tempImg = new Image();
+        tempImg.crossOrigin = "anonymous";
+        tempImg.onload = () => drawAndSave(tempImg);
+        tempImg.src = qrImg.src;
+      }
+    }
 
     function handleTradeSelectChange() {
       const select = document.getElementById('addEmpTradeSelect');
@@ -335,6 +657,11 @@
         if (data.status === "success") {
           authenticatedPin = pin;
           currentAdminRole = data.adminRole;
+
+          if (data.locations && data.locations.length > 0) {
+            savedLocations = data.locations;
+          }
+          populateLocationsDropdown();
 
           document.getElementById('welcomeAdminName').innerText = data.adminName;
           const badge = document.getElementById('roleBadge');
@@ -744,6 +1071,7 @@
       const mo = String(now.getMonth() + 1).padStart(2, '0');
       const monthInput = document.getElementById('reportMonthSelect');
       if (monthInput) monthInput.value = `${yr}-${mo}`;
+      populateLocationsDropdown();
     });
   </script>
 </body>
