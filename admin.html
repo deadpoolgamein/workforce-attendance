@@ -59,13 +59,18 @@
         <span class="text-[10px] text-cyan-400 font-mono font-bold">Super Admin Only</span>
       </div>
       <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Existing locations ka QR print karein ya live GPS se naya gate/plant QR banayein.
+        Existing locations ka QR print/delete karein ya live GPS se naya gate/plant QR banayein.
       </p>
 
       <div class="mb-3">
-        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Select Location to View / Print QR</label>
-        <select id="qrLocationSelect" onchange="renderSelectedLocationQr()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
-        </select>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Select Location to View / Print / Delete</label>
+        <div class="flex gap-2">
+          <select id="qrLocationSelect" onchange="renderSelectedLocationQr()" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
+          </select>
+          <button onclick="deleteSelectedLocation()" title="Delete Selected Location" class="px-3 py-2 bg-rose-950 hover:bg-rose-800 border border-rose-700 text-rose-300 font-bold text-xs rounded-xl transition active:scale-95">
+            🗑️ Delete
+          </button>
+        </div>
       </div>
 
       <div id="qrPreviewCard" class="bg-white text-slate-900 rounded-xl p-4 text-center shadow-inner mb-3">
@@ -135,10 +140,10 @@
         <span class="text-[10px] text-cyan-400 font-mono font-bold">Super Admin Only</span>
       </div>
       <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Active shifts dekhein ya nayi shift (Start time, Grace mins, Duty hours) add/update karein.
+        Active shifts dekhein, delete karein, ya nayi shift add/update karein.
       </p>
 
-      <!-- Active Shifts List -->
+      <!-- Active Shifts List (With Delete Button) -->
       <div id="activeShiftsList" class="space-y-1.5 mb-3 text-[11px] font-mono"></div>
 
       <!-- Add / Update Shift Form -->
@@ -233,11 +238,11 @@
       <div id="broadcastStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
     </div>
 
-    <!-- Quick Add New Employee with Inbuilt Trades Dropdown -->
+    <!-- Quick Add & Remove Employee Card -->
     <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>➕</span> Quick Add Employee
+          <span>👷</span> Add / Remove Employee
         </span>
         <span class="text-[10px] text-slate-400 font-mono">Direct to Sheet</span>
       </div>
@@ -284,10 +289,22 @@
         </div>
 
         <button id="addEmpBtn" onclick="submitNewEmployee()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition active:scale-95">
-          Save Employee to Database
+          ➕ Save Employee to Database
         </button>
       </div>
       <div id="addEmpStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
+
+      <!-- Delete / Remove Employee Section -->
+      <div class="mt-3 pt-3 border-t border-slate-800/90">
+        <label class="block text-[10px] font-bold text-rose-400 uppercase mb-1.5">🗑️ Remove / Delete Existing Employee</label>
+        <div class="flex gap-2 text-xs">
+          <input type="text" id="delEmpIdInput" placeholder="Enter Emp ID to Delete (e.g. MEC-W05)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-rose-500">
+          <button id="delEmpBtn" onclick="deleteEmployeeFromSheet()" class="px-3.5 py-2 bg-rose-950 hover:bg-rose-800 border border-rose-700 text-rose-200 font-bold rounded-lg transition active:scale-95">
+            🗑️ Remove
+          </button>
+        </div>
+        <div id="delEmpStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
+      </div>
     </div>
 
     <!-- SUPER ADMIN ONLY: Register New Supervisor -->
@@ -429,14 +446,53 @@
       savedShifts.forEach(s => {
         const hh = String(s.startHour).padStart(2, '0');
         const mm = String(s.startMin).padStart(2, '0');
+        const safeName = s.name.replace(/'/g, "\\'");
         const row = document.createElement('div');
-        row.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg";
+        row.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg gap-2";
         row.innerHTML = `
-          <span class="text-purple-300 font-bold">${s.label}</span>
-          <span class="text-slate-400">Start: ${hh}:${mm} | Grace: ${s.graceMins}m | ${s.dutyHours}h</span>
+          <div class="flex-1">
+            <span class="text-purple-300 font-bold block">${s.label}</span>
+            <span class="text-slate-400 text-[10px]">Start: ${hh}:${mm} | Grace: ${s.graceMins}m | ${s.dutyHours}h</span>
+          </div>
+          <button onclick="deleteShiftFromSheet('${safeName}')" title="Delete Shift" class="px-2 py-1 bg-rose-950/80 hover:bg-rose-800 border border-rose-800 text-rose-300 rounded text-[10px] font-bold transition">
+            🗑️
+          </button>
         `;
         box.appendChild(row);
       });
+    }
+
+    async function deleteShiftFromSheet(shiftName) {
+      if (!confirm(`Kya aap sach me "${shiftName}" shift ko delete karna chahte hain?`)) return;
+      const status = document.getElementById('saveShiftStatus');
+      status.classList.remove('hidden');
+      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
+      status.innerText = `Deleting shift ${shiftName}...`;
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "DELETE_SHIFT",
+            pin: authenticatedPin,
+            shiftName: shiftName
+          })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          if (data.shifts) savedShifts = data.shifts;
+          renderShiftsList();
+          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
+          status.innerText = "✔ " + data.message;
+        } else {
+          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (e) {
+        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+        status.innerText = "Network Error!";
+      }
     }
 
     async function saveShiftToSheet() {
@@ -508,6 +564,49 @@
         sel.appendChild(opt);
       });
       renderSelectedLocationQr();
+    }
+
+    async function deleteSelectedLocation() {
+      const sel = document.getElementById('qrLocationSelect');
+      const loc = savedLocations[sel.value];
+      if (!loc) return;
+
+      if (!confirm(`Kya aap sach me "${loc.name}" (${loc.qrSecret}) location ko delete karna chahte hain?`)) return;
+
+      const status = document.getElementById('saveLocStatus');
+      status.classList.remove('hidden');
+      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
+      status.innerText = `Deleting ${loc.name}...`;
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "DELETE_LOCATION",
+            pin: authenticatedPin,
+            qrSecret: loc.qrSecret
+          })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          if (data.locations && data.locations.length > 0) {
+            savedLocations = data.locations;
+          } else {
+            savedLocations.splice(sel.value, 1);
+          }
+          populateLocationsDropdown();
+          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
+          status.innerText = "✔ " + data.message;
+        } else {
+          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (e) {
+        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+        status.innerText = "Network Error!";
+      }
     }
 
     function renderSelectedLocationQr() {
@@ -599,8 +698,6 @@
         if (data.status === "success") {
           if (data.locations && data.locations.length > 0) {
             savedLocations = data.locations;
-          } else if (data.newLocation) {
-            savedLocations.push(data.newLocation);
           }
           populateLocationsDropdown();
           document.getElementById('qrLocationSelect').value = savedLocations.length - 1;
@@ -814,7 +911,6 @@
             indicator.className = "text-xs font-mono font-bold text-rose-400";
           }
 
-          // STRICT ROLE CHECK: Show QR Studio, Shift Manager & Admin Creator ONLY to SUPER_ADMIN
           if (data.adminRole === "SUPER_ADMIN") {
             badge.innerText = "Super Admin";
             badge.className = "text-[10px] tracking-widest uppercase bg-cyan-950 text-cyan-400 px-2.5 py-0.5 rounded-full border border-cyan-800 font-mono font-bold";
@@ -922,7 +1018,54 @@
         status.innerText = "Network Error!";
       } finally {
         btn.disabled = false;
-        btn.innerText = "Save Employee to Database";
+        btn.innerText = "➕ Save Employee to Database";
+      }
+    }
+
+    async function deleteEmployeeFromSheet() {
+      const delId = document.getElementById('delEmpIdInput').value.trim().toUpperCase();
+      const status = document.getElementById('delEmpStatus');
+      const btn = document.getElementById('delEmpBtn');
+
+      if (!delId) {
+        alert("Delete karne ke liye Employee ID enter karein!");
+        return;
+      }
+
+      if (!confirm(`Kya aap sach me Employee ID "${delId}" ko database se delete karna chahte hain?`)) return;
+
+      btn.disabled = true;
+      btn.innerText = "Removing...";
+      status.classList.remove('hidden');
+      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
+      status.innerText = `Removing ${delId} from Sheet...`;
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "DELETE_EMPLOYEE",
+            pin: authenticatedPin,
+            delEmpId: delId
+          })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
+          status.innerText = "✔ " + data.message;
+          document.getElementById('delEmpIdInput').value = "";
+        } else {
+          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (err) {
+        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+        status.innerText = "Network Error!";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "🗑️ Remove";
       }
     }
 
