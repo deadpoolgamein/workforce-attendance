@@ -54,7 +54,10 @@
           </select>
         </div>
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Shift</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase">Shift</label>
+            <span id="shiftSyncDot" class="text-[9px] font-mono text-emerald-400">Live</span>
+          </div>
           <select id="shift" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500">
             <option value="General">General (9AM-6PM)</option>
             <option value="Morning">Morning (6AM-2PM)</option>
@@ -92,7 +95,7 @@
     <!-- Status Display -->
     <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
 
-    <!-- WhatsApp Post Options (Appears automatically after punch) -->
+    <!-- WhatsApp Post Options -->
     <div id="whatsappShareBox" class="hidden mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/80 rounded-xl space-y-2">
       <p class="text-[11px] text-emerald-300 font-bold text-center uppercase tracking-wider">📢 Post Attendance to WhatsApp Group</p>
       <button onclick="sharePunchWithPhoto()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
@@ -103,17 +106,35 @@
       </button>
     </div>
 
+    <!-- Public Cloud Links (View Only for Workers) -->
+    <div class="mt-4 pt-3 border-t border-slate-800/80">
+      <div class="grid grid-cols-2 gap-2 text-[11px]">
+        <a id="publicSheetBtn" href="#" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 text-emerald-400 font-semibold transition">
+          <span>📊</span> <span>View Live Sheet</span>
+        </a>
+        <a id="publicDriveBtn" href="#" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 text-blue-400 font-semibold transition">
+          <span>📁</span> <span>View Photos</span>
+        </a>
+      </div>
+    </div>
+
     <!-- Footer -->
-    <div class="mt-5 pt-3 text-center border-t border-slate-800">
+    <div class="mt-4 pt-3 text-center border-t border-slate-800">
       <p class="text-[10px] text-slate-500 uppercase font-mono">Developed & Managed by Sandeep Singh</p>
     </div>
   </div>
 
   <script>
-    // ==========================================
-    // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
+    // ========================================================
+    // CONFIGURE YOUR SCRIPT & PUBLIC VIEW URLS HERE:
+    // ========================================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
-    // ==========================================
+    const PUBLIC_SHEET_URL = "https://docs.google.com/spreadsheets/d/1MkoMROL8seeYB4KgpSRxFVMV8qmMPgHTADy4NF1Ci-8/edit?usp=sharing";
+    const PUBLIC_DRIVE_URL = "https://drive.google.com/drive/folders/1kA3wur3nnLPvoML6S8ahUFJ9a5_XE-LY";
+    // ========================================================
+
+    document.getElementById('publicSheetBtn').href = PUBLIC_SHEET_URL;
+    document.getElementById('publicDriveBtn').href = PUBLIC_DRIVE_URL;
 
     let html5QrCode = null;
     let currentPunchMode = "QR";
@@ -123,7 +144,6 @@
     let lastCapturedPhoto = "";
     let lastWhatsAppMessage = "";
 
-    // Request Live GPS Location
     function refreshGpsLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -137,6 +157,36 @@
       }
     }
     refreshGpsLocation();
+
+    // Auto-Fetch Dynamic Shifts from Google Sheet on Load
+    async function syncPortalConfigFromSheet() {
+      const shiftSelect = document.getElementById('shift');
+      const dot = document.getElementById('shiftSyncDot');
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "GET_PORTAL_CONFIG" })
+        });
+        const data = await res.json();
+        if (data.status === "success" && data.shifts && data.shifts.length > 0 && shiftSelect) {
+          shiftSelect.innerHTML = "";
+          data.shifts.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name;
+            opt.textContent = s.label;
+            shiftSelect.appendChild(opt);
+          });
+          if (dot) dot.innerText = "✔ Synced";
+        }
+      } catch (e) {
+        console.log("Using default shift settings.");
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      syncPortalConfigFromSheet();
+    });
 
     function showStatus(msg, type) {
       const box = document.getElementById('statusBox');
