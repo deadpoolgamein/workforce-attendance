@@ -137,7 +137,6 @@
     let lastCapturedPhoto = "";
     let lastWhatsAppMessage = "";
 
-    // Fetch GPS in background
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -149,37 +148,54 @@
       );
     }
 
-    // Auto-Fetch Live Locations from Google Sheet on Load
-    async function syncLocationsFromSheet() {
+    // Auto-Fetch Both Live Locations & Dynamic Shifts from Google Sheet
+    async function syncPortalConfigFromSheet() {
+      const shiftSelect = document.getElementById('shift');
+      const locSelect = document.getElementById('quickQrSelect');
       const badge = document.getElementById('locSyncBadge');
-      const select = document.getElementById('quickQrSelect');
+
       try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "GET_LOCATIONS" })
+          body: JSON.stringify({ action: "GET_PORTAL_CONFIG" })
         });
         const data = await res.json();
-        if (data.status === "success" && data.locations && data.locations.length > 0) {
-          select.innerHTML = "";
-          data.locations.forEach(loc => {
-            const opt = document.createElement('option');
-            opt.value = loc.qrSecret;
-            opt.textContent = `${loc.name} (${loc.qrSecret})`;
-            select.appendChild(opt);
-          });
-          badge.innerText = `✔ ${data.locations.length} Locations Synced`;
-          badge.className = "text-[9px] font-mono text-emerald-400";
-        } else {
-          badge.innerText = "Default Locations Ready";
+
+        if (data.status === "success") {
+          // 1. Sync Shifts Dropdown
+          if (data.shifts && data.shifts.length > 0 && shiftSelect) {
+            shiftSelect.innerHTML = "";
+            data.shifts.forEach(s => {
+              const opt = document.createElement('option');
+              opt.value = s.name;
+              opt.textContent = s.label;
+              shiftSelect.appendChild(opt);
+            });
+          }
+
+          // 2. Sync Locations Dropdown
+          if (data.locations && data.locations.length > 0 && locSelect) {
+            locSelect.innerHTML = "";
+            data.locations.forEach(loc => {
+              const opt = document.createElement('option');
+              opt.value = loc.qrSecret;
+              opt.textContent = `${loc.name} (${loc.qrSecret})`;
+              locSelect.appendChild(opt);
+            });
+            if (badge) {
+              badge.innerText = `✔ ${data.locations.length} Locations & Shifts Synced`;
+              badge.className = "text-[9px] font-mono text-emerald-400";
+            }
+          }
         }
       } catch (e) {
-        badge.innerText = "Default Locations Ready";
+        if (badge) badge.innerText = "Default Config Ready";
       }
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-      syncLocationsFromSheet();
+      syncPortalConfigFromSheet();
     });
 
     function showStatus(msg, type) {
