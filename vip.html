@@ -56,10 +56,10 @@
         <div>
           <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Shift</label>
           <select id="shift" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-indigo-500">
-            <option value="General">General Shift</option>
-            <option value="Morning">Morning Shift</option>
-            <option value="Afternoon">Afternoon Shift</option>
-            <option value="Night">Night Shift</option>
+            <option value="General">General (9AM-6PM)</option>
+            <option value="Morning">Morning (6AM-2PM)</option>
+            <option value="Afternoon">Afternoon (2PM-10PM)</option>
+            <option value="Night">Night (10PM-6AM)</option>
           </select>
         </div>
       </div>
@@ -84,11 +84,14 @@
         <span>📷</span> SCAN LOCATION QR CODE
       </button>
 
-      <!-- Quick Direct Select -->
+      <!-- Auto-Syncing Direct Location Select -->
       <div class="pt-2 border-t border-slate-800">
-        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Or Direct Location Punch (Without QR Paper):</label>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-[10px] font-bold text-slate-400 uppercase">Or Direct Location Punch:</label>
+          <span id="locSyncBadge" class="text-[9px] font-mono text-indigo-400">Syncing Sheet...</span>
+        </div>
         <div class="flex gap-2">
-          <select id="quickQrSelect" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 font-mono">
+          <select id="quickQrSelect" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500">
             <option value="CGC_LOC_WORKSHOP_1">Workshop (CGC_LOC_WORKSHOP_1)</option>
             <option value="CGC_LOC_DG_ROOM_1">Dg Room (CGC_LOC_DG_ROOM_1)</option>
             <option value="CGC_LOC_BOILER_ROOM_1">Boiler (CGC_LOC_BOILER_ROOM_1)</option>
@@ -104,7 +107,7 @@
     <!-- Status Display -->
     <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
 
-    <!-- WhatsApp Post Options (Appears automatically after punch) -->
+    <!-- WhatsApp Post Options -->
     <div id="whatsappShareBox" class="hidden mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/80 rounded-xl space-y-2">
       <p class="text-[11px] text-emerald-300 font-bold text-center uppercase tracking-wider">📢 Post Attendance to WhatsApp Group</p>
       <button onclick="sharePunchWithPhoto()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
@@ -134,6 +137,7 @@
     let lastCapturedPhoto = "";
     let lastWhatsAppMessage = "";
 
+    // Fetch GPS in background
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -144,6 +148,39 @@
         { enableHighAccuracy: true }
       );
     }
+
+    // Auto-Fetch Live Locations from Google Sheet on Load
+    async function syncLocationsFromSheet() {
+      const badge = document.getElementById('locSyncBadge');
+      const select = document.getElementById('quickQrSelect');
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "GET_LOCATIONS" })
+        });
+        const data = await res.json();
+        if (data.status === "success" && data.locations && data.locations.length > 0) {
+          select.innerHTML = "";
+          data.locations.forEach(loc => {
+            const opt = document.createElement('option');
+            opt.value = loc.qrSecret;
+            opt.textContent = `${loc.name} (${loc.qrSecret})`;
+            select.appendChild(opt);
+          });
+          badge.innerText = `✔ ${data.locations.length} Locations Synced`;
+          badge.className = "text-[9px] font-mono text-emerald-400";
+        } else {
+          badge.innerText = "Default Locations Ready";
+        }
+      } catch (e) {
+        badge.innerText = "Default Locations Ready";
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      syncLocationsFromSheet();
+    });
 
     function showStatus(msg, type) {
       const box = document.getElementById('statusBox');
