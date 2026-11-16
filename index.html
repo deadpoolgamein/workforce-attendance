@@ -25,9 +25,9 @@
   <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
     
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
       <div>
-        <span class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">
+        <span id="todayHolidayBadge" class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">
           📍 150m Geofence Active
         </span>
         <h1 class="text-lg font-black text-white mt-1">CGC WORKFORCE PORTAL</h1>
@@ -38,14 +38,27 @@
       </a>
     </div>
 
-    <!-- Form Inputs -->
-    <div class="space-y-3 text-xs mb-4">
-      <div>
-        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Employee ID</label>
-        <input type="text" id="empId" placeholder="Enter Emp ID (e.g. MEC-W01)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase text-sm focus:outline-none focus:border-emerald-500">
-      </div>
+    <!-- Mode Switcher Tabs: Attendance Punch vs Leave / CPL Application -->
+    <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4 text-xs font-bold">
+      <button id="tabPunchBtn" onclick="switchWorkerTab('PUNCH')" class="py-2 rounded-lg bg-emerald-600 text-white shadow transition">
+        📷 Duty Punch
+      </button>
+      <button id="tabLeaveBtn" onclick="switchWorkerTab('LEAVE')" class="py-2 rounded-lg text-slate-400 hover:text-white transition">
+        📝 Apply Leave / CPL
+      </button>
+    </div>
 
-      <div class="grid grid-cols-2 gap-2">
+    <!-- Common Employee ID Input -->
+    <div class="mb-3 text-xs">
+      <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Employee ID / Code</label>
+      <input type="text" id="empId" placeholder="Enter Emp ID (e.g. MEC-W01, J-5383)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase text-sm focus:outline-none focus:border-emerald-500">
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PANEL 1: DUTY ATTENDANCE PUNCH             -->
+    <!-- ========================================== -->
+    <div id="punchPanel">
+      <div class="grid grid-cols-2 gap-2 text-xs mb-4">
         <div>
           <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Duty Action</label>
           <select id="dutyType" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
@@ -66,47 +79,124 @@
           </select>
         </div>
       </div>
+
+      <!-- QR Scanner Box -->
+      <div id="qrBox" class="hidden mb-4 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2">
+        <div id="reader" class="w-full rounded-lg overflow-hidden"></div>
+        <button onclick="stopQrScanner()" class="w-full mt-2 py-2 bg-rose-600 text-white font-bold text-xs rounded-lg">Cancel QR Scan</button>
+      </div>
+
+      <!-- Live Front Camera Box for Selfie -->
+      <div id="cameraBox" class="hidden mb-4 bg-slate-950 border border-emerald-700 rounded-xl p-3 text-center">
+        <p id="countdownText" class="text-xs font-mono text-emerald-400 font-bold mb-2">Position Face for Verification...</p>
+        <video id="video" autoplay playsinline class="w-full h-56 object-cover rounded-lg border border-slate-800 bg-black"></video>
+        <canvas id="canvas" class="hidden"></canvas>
+      </div>
+
+      <!-- Action Buttons -->
+      <div id="actionButtons" class="space-y-2.5">
+        <button onclick="startQrFlow()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+          <span>📷</span> SCAN GATE QR CODE
+        </button>
+
+        <button onclick="startManualFlow()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition active:scale-95">
+          <span>📱</span> Mobile Direct Punch (If Allowed)
+        </button>
+      </div>
+
+      <!-- Status Display -->
+      <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
+
+      <!-- WhatsApp Post Options -->
+      <div id="whatsappShareBox" class="hidden mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/80 rounded-xl space-y-2">
+        <p class="text-[11px] text-emerald-300 font-bold text-center uppercase tracking-wider">📢 Post Attendance to WhatsApp Group</p>
+        <button onclick="sharePunchWithPhoto()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+          <span>📲</span> POST TO WHATSAPP (WITH PHOTO)
+        </button>
+        <button onclick="sharePunchTextOnly()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95">
+          <span>💬</span> Post Text Slip Only
+        </button>
+      </div>
     </div>
 
-    <!-- QR Scanner Box -->
-    <div id="qrBox" class="hidden mb-4 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2">
-      <div id="reader" class="w-full rounded-lg overflow-hidden"></div>
-      <button onclick="stopQrScanner()" class="w-full mt-2 py-2 bg-rose-600 text-white font-bold text-xs rounded-lg">Cancel QR Scan</button>
-    </div>
+    <!-- ========================================== -->
+    <!-- PANEL 2: CGC DIGITAL LEAVE & CPL FORM      -->
+    <!-- ========================================== -->
+    <div id="leavePanel" class="hidden space-y-3 text-xs">
+      <div class="bg-amber-950/30 border border-amber-800/60 rounded-xl p-2.5 text-center">
+        <span class="text-[11px] font-bold text-amber-300 uppercase tracking-wider">CGC University Leave / CPL Application</span>
+      </div>
 
-    <!-- Live Front Camera Box for Selfie -->
-    <div id="cameraBox" class="hidden mb-4 bg-slate-950 border border-emerald-700 rounded-xl p-3 text-center">
-      <p id="countdownText" class="text-xs font-mono text-emerald-400 font-bold mb-2">Position Face for Verification...</p>
-      <video id="video" autoplay playsinline class="w-full h-56 object-cover rounded-lg border border-slate-800 bg-black"></video>
-      <canvas id="canvas" class="hidden"></canvas>
-    </div>
+      <!-- Nature of Leave (Including CPL & All CGC Leave Types) -->
+      <div>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nature of Leave</label>
+        <select id="leaveTypeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-amber-300 font-bold focus:outline-none focus:border-amber-500">
+          <option value="Compensatory Leave (CPL)">⭐ Compensatory Leave (CPL)</option>
+          <option value="Casual Leave (CL)">Casual Leave (CL)</option>
+          <option value="Medical Leave (ML)">Medical Leave (ML)</option>
+          <option value="Short Leave (SL)">Short Leave (SL - Hours)</option>
+          <option value="Earned Leave (EL)">Earned Leave (EL)</option>
+          <option value="Official Duty (OD)">Official Duty (OD)</option>
+          <option value="Academic Leave (AL)">Academic Leave (AL)</option>
+          <option value="Summer Vacation (SV)">Summer Vacation (SV)</option>
+          <option value="Winter Vacation (WV)">Winter Vacation (WV)</option>
+        </select>
+      </div>
 
-    <!-- Action Buttons -->
-    <div id="actionButtons" class="space-y-2.5">
-      <button onclick="startQrFlow()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
-        <span>📷</span> SCAN GATE QR CODE
+      <!-- Leave Applied For (Hours / Days) -->
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Leave Applied For</label>
+          <input type="text" id="leaveDuration" value="1 Day" placeholder="e.g. 1 Day, 2 Days, 2 Hrs" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Msg Received (MR) to HOD?</label>
+          <select id="msgToHodSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+            <option value="Yes">✅ Yes (Informed HOD)</option>
+            <option value="No">❌ No</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- From Date & To Date -->
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">From Date</label>
+          <input type="date" id="leaveFromDate" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">To Date</label>
+          <input type="date" id="leaveToDate" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+
+      <!-- Reason -->
+      <div>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reason (e.g. Sunday/Holiday Duty CPL date, Urgent work)</label>
+        <textarea id="leaveReason" rows="2" placeholder="Reason likhein (agar CPL hai toh kis Sunday/Holiday ko duty ki thi woh date likhein)..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"></textarea>
+      </div>
+
+      <button id="submitLeaveBtn" onclick="submitLeaveApplication()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition active:scale-95">
+        📤 SUBMIT LEAVE / CPL APPLICATION
       </button>
 
-      <button onclick="startManualFlow()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition active:scale-95">
-        <span>📱</span> Mobile Direct Punch (If Allowed)
-      </button>
+      <div id="leaveStatusBox" class="hidden p-3 rounded-xl border text-xs font-mono text-center"></div>
+
+      <!-- WhatsApp Slip Forward to HOD -->
+      <div id="leaveWhatsAppBox" class="hidden p-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-center">
+        <button onclick="shareLeaveSlipToWhatsApp()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow flex items-center justify-center gap-2 transition active:scale-95">
+          <span>📲</span> SEND LEAVE SLIP TO HOD ON WHATSAPP
+        </button>
+      </div>
     </div>
 
-    <!-- Status Display -->
-    <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
-
-    <!-- WhatsApp Post Options -->
-    <div id="whatsappShareBox" class="hidden mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/80 rounded-xl space-y-2">
-      <p class="text-[11px] text-emerald-300 font-bold text-center uppercase tracking-wider">📢 Post Attendance to WhatsApp Group</p>
-      <button onclick="sharePunchWithPhoto()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
-        <span>📲</span> POST TO WHATSAPP (WITH PHOTO)
-      </button>
-      <button onclick="sharePunchTextOnly()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95">
-        <span>💬</span> Post Text Slip Only
-      </button>
+    <!-- Upcoming Official Holidays Strip -->
+    <div id="upcomingHolidaysBox" class="hidden mt-4 pt-3 border-t border-slate-800/80">
+      <span class="block text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1.5">📅 Upcoming Official Holidays (CPL Eligible on Duty)</span>
+      <div id="workerHolidaysList" class="flex flex-wrap gap-1.5 text-[10px] font-mono"></div>
     </div>
 
-    <!-- Public Cloud Links (View Only for Workers) -->
+    <!-- Public Cloud Links -->
     <div class="mt-4 pt-3 border-t border-slate-800/80">
       <div class="grid grid-cols-2 gap-2 text-[11px]">
         <a id="publicSheetBtn" href="#" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 text-emerald-400 font-semibold transition">
@@ -143,6 +233,26 @@
     let userLng = null;
     let lastCapturedPhoto = "";
     let lastWhatsAppMessage = "";
+    let lastLeaveWhatsAppText = "";
+
+    function switchWorkerTab(tab) {
+      const punchPanel = document.getElementById('punchPanel');
+      const leavePanel = document.getElementById('leavePanel');
+      const btnP = document.getElementById('tabPunchBtn');
+      const btnL = document.getElementById('tabLeaveBtn');
+
+      if (tab === 'PUNCH') {
+        punchPanel.classList.remove('hidden');
+        leavePanel.classList.add('hidden');
+        btnP.className = "py-2 rounded-lg bg-emerald-600 text-white shadow transition";
+        btnL.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
+      } else {
+        punchPanel.classList.add('hidden');
+        leavePanel.classList.remove('hidden');
+        btnL.className = "py-2 rounded-lg bg-amber-600 text-white shadow transition";
+        btnP.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
+      }
+    }
 
     function refreshGpsLocation() {
       if (navigator.geolocation) {
@@ -158,7 +268,6 @@
     }
     refreshGpsLocation();
 
-    // Auto-Fetch Dynamic Shifts from Google Sheet on Load
     async function syncPortalConfigFromSheet() {
       const shiftSelect = document.getElementById('shift');
       const dot = document.getElementById('shiftSyncDot');
@@ -169,15 +278,38 @@
           body: JSON.stringify({ action: "GET_PORTAL_CONFIG" })
         });
         const data = await res.json();
-        if (data.status === "success" && data.shifts && data.shifts.length > 0 && shiftSelect) {
-          shiftSelect.innerHTML = "";
-          data.shifts.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.name;
-            opt.textContent = s.label;
-            shiftSelect.appendChild(opt);
-          });
-          if (dot) dot.innerText = "✔ Synced";
+        if (data.status === "success") {
+          if (data.shifts && data.shifts.length > 0 && shiftSelect) {
+            shiftSelect.innerHTML = "";
+            data.shifts.forEach(s => {
+              const opt = document.createElement('option');
+              opt.value = s.name;
+              opt.textContent = s.label;
+              shiftSelect.appendChild(opt);
+            });
+            if (dot) dot.innerText = "✔ Synced";
+          }
+
+          if (data.holidays && data.holidays.length > 0) {
+            const todayIso = new Date().toISOString().split('T')[0];
+            const todayHol = data.holidays.find(h => h.date === todayIso);
+            if (todayHol) {
+              const badge = document.getElementById('todayHolidayBadge');
+              badge.innerText = `🎉 HOLIDAY DUTY: ${todayHol.title} (CPL Eligible)`;
+              badge.className = "text-[10px] tracking-wider uppercase bg-amber-950 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-700 font-mono font-bold";
+            }
+
+            const holBox = document.getElementById('upcomingHolidaysBox');
+            const holList = document.getElementById('workerHolidaysList');
+            holBox.classList.remove('hidden');
+            holList.innerHTML = "";
+            data.holidays.slice(0, 6).forEach(h => {
+              const tag = document.createElement('span');
+              tag.className = "bg-slate-950 border border-amber-800/70 text-amber-300 px-2 py-1 rounded-lg";
+              tag.innerText = `${h.date}: ${h.title}`;
+              holList.appendChild(tag);
+            });
+          }
         }
       } catch (e) {
         console.log("Using default shift settings.");
@@ -185,6 +317,9 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      document.getElementById('leaveFromDate').value = todayStr;
+      document.getElementById('leaveToDate').value = todayStr;
       syncPortalConfigFromSheet();
     });
 
@@ -199,6 +334,86 @@
         box.className = "mt-4 p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
       }
       box.innerHTML = msg;
+    }
+
+    async function submitLeaveApplication() {
+      const empId = document.getElementById('empId').value.trim().toUpperCase();
+      const leaveType = document.getElementById('leaveTypeSelect').value;
+      const duration = document.getElementById('leaveDuration').value.trim();
+      const msgToHod = document.getElementById('msgToHodSelect').value;
+      const fromDate = document.getElementById('leaveFromDate').value;
+      const toDate = document.getElementById('leaveToDate').value || fromDate;
+      const reason = document.getElementById('leaveReason').value.trim();
+
+      const statusBox = document.getElementById('leaveStatusBox');
+      const btn = document.getElementById('submitLeaveBtn');
+
+      if (!empId || !fromDate) {
+        alert("Pehle upar Employee ID aur From Date enter karein!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Submitting Leave Application...";
+      statusBox.classList.remove('hidden');
+      statusBox.className = "p-3 rounded-xl border border-yellow-700 bg-yellow-950/40 text-yellow-300 text-xs font-mono text-center";
+      statusBox.innerText = "⏳ Recording leave application in Sheet...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "APPLY_LEAVE",
+            empId: empId,
+            leaveType: leaveType,
+            duration: duration,
+            fromDate: fromDate,
+            toDate: toDate,
+            reason: reason,
+            msgToHod: msgToHod
+          })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          statusBox.className = "p-3 rounded-xl border border-emerald-700 bg-emerald-950/50 text-emerald-300 text-xs font-mono text-center";
+          statusBox.innerHTML = `✅ <b>${data.message}</b><br>Name: ${data.empName} (${data.trade})<br>Type: <b>${data.leaveType}</b>`;
+
+          lastLeaveWhatsAppText =
+            `📝 *CGC UNIVERSITY, MOHALI - LEAVE APPLICATION*\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `🆔 *Ref ID:* ${data.leaveId}\n` +
+            `👤 *Name:* ${data.empName}\n` +
+            `🔢 *Employee Code:* ${data.empId}\n` +
+            `🛠 *Designation/Trade:* ${data.trade}\n` +
+            `🏢 *Department:* ${data.dept}\n` +
+            `📌 *Nature of Leave:* ${data.leaveType}\n` +
+            `⏱ *Applied For:* ${data.duration}\n` +
+            `📅 *Dates:* ${data.fromDate} to ${data.toDate}\n` +
+            `📞 *Msg Received to HOD:* ${data.msgToHod}\n` +
+            `✍️ *Reason:* ${data.reason || "Personal / Duty CPL"}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `_Submitted via CGC Workforce Digital Portal_`;
+
+          document.getElementById('leaveWhatsAppBox').classList.remove('hidden');
+        } else {
+          statusBox.className = "p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
+          statusBox.innerText = `❌ ${data.message}`;
+        }
+      } catch (err) {
+        statusBox.className = "p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
+        statusBox.innerText = "❌ Network Error!";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "📤 SUBMIT LEAVE / CPL APPLICATION";
+      }
+    }
+
+    function shareLeaveSlipToWhatsApp() {
+      if (!lastLeaveWhatsAppText) return;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(lastLeaveWhatsAppText)}`;
+      window.open(url, '_blank');
     }
 
     function startQrFlow() {
@@ -349,8 +564,9 @@
             `🛠 *Trade:* ${data.trade}\n` +
             `📌 *Duty:* ${data.dutyType} (${shift})\n` +
             `📍 *Location:* ${data.locationName}\n` +
+            `📅 *Day Type:* ${data.dayCategory}\n` +
             `🕒 *Time:* ${data.time}\n` +
-            `📅 *Date:* ${todayStr}\n` +
+            `📆 *Date:* ${todayStr}\n` +
             `✅ *Status:* ${data.punctuality}\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `_Verified via Digital Workforce Portal_`;
@@ -359,8 +575,8 @@
             `✅ <b>ATTENDANCE MARKED!</b><br>` +
             `👤 ${data.name} (${data.trade})<br>` +
             `📍 Location: <b>${data.locationName}</b> (${data.distance}m)<br>` +
-            `🕒 Time: <b>${data.time}</b><br>` +
-            `📌 Status: <b>${data.punctuality}</b>`,
+            `📅 Day: <b>${data.dayCategory}</b><br>` +
+            `🕒 Time: <b>${data.time}</b> | <b>${data.punctuality}</b>`,
             "success"
           );
 
