@@ -50,6 +50,45 @@
       <button onclick="logoutAdmin()" class="text-xs text-slate-400 hover:text-rose-400 font-mono">Logout</button>
     </div>
 
+    <!-- Pending Leave & CPL Approval Inbox (Visible to All Admins) -->
+    <div class="bg-gradient-to-br from-amber-950/50 to-slate-950 border border-amber-700/80 rounded-2xl p-4 mb-4 shadow-lg">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>📝</span> Pending Leave & CPL Requests
+        </span>
+        <span id="pendingLeaveCountBadge" class="text-[10px] bg-amber-950 border border-amber-700 text-amber-300 px-2 py-0.5 rounded-full font-mono font-bold">0 Pending</span>
+      </div>
+      <div id="pendingLeavesContainer" class="space-y-2 text-xs">
+        <p class="text-[11px] text-slate-400 font-mono text-center py-2">Koi pending leave/CPL request nahi hai.</p>
+      </div>
+    </div>
+
+    <!-- SUPER ADMIN ONLY: Official Holiday Manager (CPL Eligible Days) -->
+    <div id="superAdminHolidaySection" class="hidden bg-slate-950 border border-amber-800/80 rounded-2xl p-4 mb-4 shadow-lg">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🎉</span> Official Holiday Manager
+        </span>
+        <span class="text-[10px] text-cyan-400 font-mono font-bold">Super Admin Only</span>
+      </div>
+      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
+        Holidays add karein—in dates par duty karne wale staff ko auto-CPL credit milega.
+      </p>
+
+      <div id="adminHolidaysList" class="space-y-1.5 mb-3 text-[11px] font-mono"></div>
+
+      <div class="pt-2.5 border-t border-slate-800 space-y-2 text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <input type="date" id="newHolDate" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-300 font-mono focus:outline-none">
+          <input type="text" id="newHolName" placeholder="Holiday Name (e.g. Gurpurab)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none">
+        </div>
+        <button id="saveHolBtn" onclick="addHolidayToSheet()" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shadow transition active:scale-95">
+          ➕ Add Official Holiday
+        </button>
+        <div id="holStatus" class="hidden text-[11px] text-center font-mono mt-1"></div>
+      </div>
+    </div>
+
     <!-- SUPER ADMIN ONLY: Location & Printable QR Poster Studio -->
     <div id="superAdminQrSection" class="hidden bg-gradient-to-br from-indigo-950/60 to-slate-950 border border-indigo-700/80 rounded-2xl p-4 mb-4 shadow-lg">
       <div class="flex items-center justify-between mb-2">
@@ -143,10 +182,8 @@
         Active shifts dekhein, delete karein, ya nayi shift add/update karein.
       </p>
 
-      <!-- Active Shifts List (With Delete Button) -->
       <div id="activeShiftsList" class="space-y-1.5 mb-3 text-[11px] font-mono"></div>
 
-      <!-- Add / Update Shift Form -->
       <div class="pt-2.5 border-t border-slate-800 space-y-2 text-xs">
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -208,7 +245,7 @@
         <span class="text-[10px] text-slate-400 font-mono">Excel / CSV</span>
       </div>
       <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Regular days, Sunday roster, and Holiday duties auto-segregated for Accounts.
+        Regular days, Sunday roster, Holiday duties, and CPL/Leaves auto-segregated.
       </p>
 
       <div class="flex gap-2 mb-2">
@@ -412,7 +449,7 @@
     // ========================================================
     // CONFIGURE YOUR CLOUD & SCRIPT URLS HERE:
     // ========================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
+    const SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
     // Public Sheets & Photos (For Supervisors / Viewers)
     const PUBLIC_SHEET_URL = "https://docs.google.com/spreadsheets/d/1MkoMROL8seeYB4KgpSRxFVMV8qmMPgHTADy4NF1Ci-8/edit?usp=sharing";
@@ -425,6 +462,8 @@
 
     let authenticatedPin = "";
     let currentAdminRole = "";
+    let savedHolidays = [];
+    let pendingLeaves = [];
     let savedLocations = [
       { id: "LOC-01", name: "Workshop", qrSecret: "CGC_LOC_WORKSHOP_1", lat: 30.7499, lng: 76.6432, radius: 150 },
       { id: "LOC-02", name: "Dg Room", qrSecret: "CGC_LOC_DG_ROOM_1", lat: 30.7499, lng: 76.6432, radius: 150 },
@@ -438,6 +477,156 @@
       { name: "Afternoon", label: "Afternoon (2PM-10PM)", startHour: 14, startMin: 0, graceMins: 15, dutyHours: 8 },
       { name: "Night", label: "Night (10PM-6AM)", startHour: 22, startMin: 0, graceMins: 15, dutyHours: 8 }
     ];
+
+    function renderPendingLeaves() {
+      const box = document.getElementById('pendingLeavesContainer');
+      const badge = document.getElementById('pendingLeaveCountBadge');
+      badge.innerText = `${pendingLeaves.length} Pending`;
+
+      if (!pendingLeaves || pendingLeaves.length === 0) {
+        box.innerHTML = `<p class="text-[11px] text-slate-400 font-mono text-center py-2">Koi pending leave/CPL request nahi hai.</p>`;
+        return;
+      }
+
+      box.innerHTML = "";
+      pendingLeaves.forEach(lv => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-900 border border-slate-800 rounded-xl p-2.5 space-y-1.5";
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white">${lv.empName} <span class="text-slate-400 font-mono text-[10px]">(${lv.empId})</span></span>
+            <span class="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-800">${lv.leaveType}</span>
+          </div>
+          <div class="text-[11px] text-slate-300 font-mono">
+            📅 ${lv.fromDate} to ${lv.toDate} (${lv.duration})
+          </div>
+          ${lv.reason ? `<div class="text-[10px] text-slate-400 italic">"${lv.reason}"</div>` : ""}
+          <div class="grid grid-cols-2 gap-1.5 pt-1">
+            <button onclick="processLeaveAction('${lv.leaveId}', 'APPROVED')" class="py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px] transition">
+              ✅ Approve
+            </button>
+            <button onclick="processLeaveAction('${lv.leaveId}', 'REJECTED')" class="py-1.5 bg-rose-900 hover:bg-rose-700 text-rose-100 font-bold rounded-lg text-[11px] transition">
+              ❌ Reject
+            </button>
+          </div>
+        `;
+        box.appendChild(card);
+      });
+    }
+
+    async function processLeaveAction(leaveId, decision) {
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "PROCESS_LEAVE",
+            pin: authenticatedPin,
+            leaveId: leaveId,
+            decision: decision
+          })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          pendingLeaves = data.pendingLeaves || [];
+          renderPendingLeaves();
+          alert(data.message);
+        } else {
+          alert("Error: " + data.message);
+        }
+      } catch (e) {
+        alert("Network Error!");
+      }
+    }
+
+    function renderHolidaysList() {
+      const box = document.getElementById('adminHolidaysList');
+      if (!box) return;
+      if (!savedHolidays || savedHolidays.length === 0) {
+        box.innerHTML = `<p class="text-slate-400 text-center py-1">Abhi koi official holiday added nahi hai.</p>`;
+        return;
+      }
+      box.innerHTML = "";
+      savedHolidays.forEach(h => {
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg";
+        row.innerHTML = `
+          <span><b class="text-amber-300">${h.date}</b> — ${h.title}</span>
+          <button onclick="deleteHolidayFromSheet('${h.date}')" class="px-2 py-0.5 bg-rose-950 hover:bg-rose-800 border border-rose-800 text-rose-300 rounded text-[10px]">🗑️</button>
+        `;
+        box.appendChild(row);
+      });
+    }
+
+    async function addHolidayToSheet() {
+      const holDate = document.getElementById('newHolDate').value;
+      const holName = document.getElementById('newHolName').value.trim();
+      const status = document.getElementById('holStatus');
+      const btn = document.getElementById('saveHolBtn');
+
+      if (!holDate || !holName) {
+        alert("Holiday Date aur Name dono enter karein!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Adding Holiday...";
+      status.classList.remove('hidden');
+      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
+      status.innerText = "Saving to Holidays tab...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "ADD_HOLIDAY",
+            pin: authenticatedPin,
+            holDate: holDate,
+            holName: holName
+          })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          savedHolidays = data.holidays || [];
+          renderHolidaysList();
+          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
+          status.innerText = "✔ " + data.message;
+          document.getElementById('newHolName').value = "";
+        } else {
+          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (e) {
+        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+        status.innerText = "Network Error!";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "➕ Add Official Holiday";
+      }
+    }
+
+    async function deleteHolidayFromSheet(holDate) {
+      if (!confirm(`Kya aap ${holDate} ki holiday delete karna chahte hain?`)) return;
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "DELETE_HOLIDAY",
+            pin: authenticatedPin,
+            holDate: holDate
+          })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          savedHolidays = data.holidays || [];
+          renderHolidaysList();
+        }
+      } catch (e) {
+        alert("Network Error!");
+      }
+    }
 
     function renderShiftsList() {
       const box = document.getElementById('activeShiftsList');
@@ -884,14 +1073,15 @@
           authenticatedPin = pin;
           currentAdminRole = data.adminRole;
 
-          if (data.locations && data.locations.length > 0) {
-            savedLocations = data.locations;
-          }
-          if (data.shifts && data.shifts.length > 0) {
-            savedShifts = data.shifts;
-          }
+          if (data.locations && data.locations.length > 0) savedLocations = data.locations;
+          if (data.shifts && data.shifts.length > 0) savedShifts = data.shifts;
+          savedHolidays = data.holidays || [];
+          pendingLeaves = data.pendingLeaves || [];
+
           populateLocationsDropdown();
           renderShiftsList();
+          renderHolidaysList();
+          renderPendingLeaves();
 
           document.getElementById('welcomeAdminName').innerText = data.adminName;
           const badge = document.getElementById('roleBadge');
@@ -917,6 +1107,7 @@
             document.getElementById('superAdminSection').classList.remove('hidden');
             document.getElementById('superAdminQrSection').classList.remove('hidden');
             document.getElementById('superAdminShiftSection').classList.remove('hidden');
+            document.getElementById('superAdminHolidaySection').classList.remove('hidden');
 
             viewBadge.innerText = "Full Master DB";
             viewBadge.className = "text-[10px] text-cyan-400 font-mono font-bold";
@@ -930,6 +1121,7 @@
             document.getElementById('superAdminSection').classList.add('hidden');
             document.getElementById('superAdminQrSection').classList.add('hidden');
             document.getElementById('superAdminShiftSection').classList.add('hidden');
+            document.getElementById('superAdminHolidaySection').classList.add('hidden');
 
             viewBadge.innerText = "Public Safe View";
             viewBadge.className = "text-[10px] text-emerald-400 font-mono";
@@ -1318,10 +1510,10 @@
           status.innerText = "CSV ready! Downloading...";
 
           let csvContent = "data:text/csv;charset=utf-8,";
-          csvContent += "Emp ID,Worker Name,Department,Trade,Regular Days,Sunday Duties (OT),Holiday Duties (OT),Total Payable Days,Total Duty Hours,Missing Out-Punch Days\r\n";
+          csvContent += "Emp ID,Worker Name,Department,Trade,Regular Days,Sunday Duties (OT),Holiday Duties (OT),CPL Taken,Total Approved Leaves,Total Payable Days,Total Duty Hours,Missing Out-Punch Days\r\n";
 
           resp.data.forEach(row => {
-            csvContent += `"${row.empId}","${row.name}","${row.dept}","${row.trade}",${row.regularDays},${row.sundayDuties},${row.holidayDuties},${row.totalPayableDays},${row.totalHours},${row.missingOutDays}\r\n`;
+            csvContent += `"${row.empId}","${row.name}","${row.dept}","${row.trade}",${row.regularDays},${row.sundayDuties},${row.holidayDuties},${row.cplCount},${row.approvedLeaves},${row.totalPayableDays},${row.totalHours},${row.missingOutDays}\r\n`;
           });
 
           const encodedUri = encodeURI(csvContent);
