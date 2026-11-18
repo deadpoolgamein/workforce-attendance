@@ -51,7 +51,7 @@
     <!-- Common Employee ID Input -->
     <div class="mb-3 text-xs">
       <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Employee ID / Code</label>
-      <input type="text" id="empId" placeholder="Enter Emp ID (e.g. MEC-W01, J-5383)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase text-sm focus:outline-none focus:border-emerald-500">
+      <input type="text" id="empId" placeholder="Enter Emp ID (e.g. J-337, J-5383)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase text-sm focus:outline-none focus:border-emerald-500">
     </div>
 
     <!-- ========================================== -->
@@ -127,7 +127,6 @@
         <span class="text-[11px] font-bold text-amber-300 uppercase tracking-wider">CGC University Leave / CPL Application</span>
       </div>
 
-      <!-- Nature of Leave (Including CPL & All CGC Leave Types) -->
       <div>
         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nature of Leave</label>
         <select id="leaveTypeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-amber-300 font-bold focus:outline-none focus:border-amber-500">
@@ -143,7 +142,6 @@
         </select>
       </div>
 
-      <!-- Leave Applied For (Hours / Days) -->
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Leave Applied For</label>
@@ -158,7 +156,6 @@
         </div>
       </div>
 
-      <!-- From Date & To Date -->
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">From Date</label>
@@ -170,9 +167,8 @@
         </div>
       </div>
 
-      <!-- Reason -->
       <div>
-        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reason (e.g. Sunday/Holiday Duty CPL date, Urgent work)</label>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reason (e.g. Sunday/Holiday Duty CPL date)</label>
         <textarea id="leaveReason" rows="2" placeholder="Reason likhein (agar CPL hai toh kis Sunday/Holiday ko duty ki thi woh date likhein)..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"></textarea>
       </div>
 
@@ -182,7 +178,6 @@
 
       <div id="leaveStatusBox" class="hidden p-3 rounded-xl border text-xs font-mono text-center"></div>
 
-      <!-- WhatsApp Slip Forward to HOD -->
       <div id="leaveWhatsAppBox" class="hidden p-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-center">
         <button onclick="shareLeaveSlipToWhatsApp()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow flex items-center justify-center gap-2 transition active:scale-95">
           <span>📲</span> SEND LEAVE SLIP TO HOD ON WHATSAPP
@@ -196,18 +191,6 @@
       <div id="workerHolidaysList" class="flex flex-wrap gap-1.5 text-[10px] font-mono"></div>
     </div>
 
-    <!-- Public Cloud Links -->
-    <div class="mt-4 pt-3 border-t border-slate-800/80">
-      <div class="grid grid-cols-2 gap-2 text-[11px]">
-        <a id="publicSheetBtn" href="#" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 text-emerald-400 font-semibold transition">
-          <span>📊</span> <span>View Live Sheet</span>
-        </a>
-        <a id="publicDriveBtn" href="#" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 text-blue-400 font-semibold transition">
-          <span>📁</span> <span>View Photos</span>
-        </a>
-      </div>
-    </div>
-
     <!-- Footer -->
     <div class="mt-4 pt-3 text-center border-t border-slate-800">
       <p class="text-[10px] text-slate-500 uppercase font-mono">Developed & Managed by Sandeep Singh</p>
@@ -216,15 +199,9 @@
 
   <script>
     // ========================================================
-    // CONFIGURE YOUR SCRIPT & PUBLIC VIEW URLS HERE:
-    // ========================================================
+    // CONFIGURE YOUR APPS SCRIPT WEB APP URL HERE:
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
-    const PUBLIC_SHEET_URL = "https://docs.google.com/spreadsheets/d/1MkoMROL8seeYB4KgpSRxFVMV8qmMPgHTADy4NF1Ci-8/edit?usp=sharing";
-    const PUBLIC_DRIVE_URL = "https://drive.google.com/drive/folders/1kA3wur3nnLPvoML6S8ahUFJ9a5_XE-LY";
     // ========================================================
-
-    document.getElementById('publicSheetBtn').href = PUBLIC_SHEET_URL;
-    document.getElementById('publicDriveBtn').href = PUBLIC_DRIVE_URL;
 
     let html5QrCode = null;
     let currentPunchMode = "QR";
@@ -386,7 +363,7 @@
             `🆔 *Ref ID:* ${data.leaveId}\n` +
             `👤 *Name:* ${data.empName}\n` +
             `🔢 *Employee Code:* ${data.empId}\n` +
-            `🛠 *Designation/Trade:* ${data.trade}\n` +
+            `🛠 *Sub-Department:* ${data.trade}\n` +
             `🏢 *Department:* ${data.dept}\n` +
             `📌 *Nature of Leave:* ${data.leaveType}\n` +
             `⏱ *Applied For:* ${data.duration}\n` +
@@ -561,7 +538,7 @@
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `👤 *Name:* ${data.name}\n` +
             `🆔 *Emp ID:* ${empId}\n` +
-            `🛠 *Trade:* ${data.trade}\n` +
+            `🛠 *Sub-Dept:* ${data.trade}\n` +
             `📌 *Duty:* ${data.dutyType} (${shift})\n` +
             `📍 *Location:* ${data.locationName}\n` +
             `📅 *Day Type:* ${data.dayCategory}\n` +
