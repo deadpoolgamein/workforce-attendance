@@ -50,7 +50,7 @@
       <button onclick="logoutAdmin()" class="text-xs text-slate-400 hover:text-rose-400 font-mono">Logout</button>
     </div>
 
-    <!-- Pending Leave & CPL Approval Inbox (Visible to All Admins) -->
+    <!-- Pending Leave & CPL Approval Inbox (All Admins) -->
     <div class="bg-gradient-to-br from-amber-950/50 to-slate-950 border border-amber-700/80 rounded-2xl p-4 mb-4 shadow-lg">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -63,13 +63,13 @@
       </div>
     </div>
 
-    <!-- SUPER ADMIN ONLY: Official Holiday Manager (CPL Eligible Days) -->
-    <div id="superAdminHolidaySection" class="All Admins bg-slate-950 border border-amber-800/80 rounded-2xl p-4 mb-4 shadow-lg">
+    <!-- ALL ADMINS: Official Holiday Manager (CPL Eligible Days) -->
+    <div id="superAdminHolidaySection" class="bg-slate-950 border border-amber-800/80 rounded-2xl p-4 mb-4 shadow-lg">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
           <span>🎉</span> Official Holiday Manager
         </span>
-        <span class="text-[10px] text-cyan-400 font-mono font-bold">Super Admin & Admin Only</span>
+        <span class="text-[10px] text-amber-300 font-mono font-bold">Super Admin & Admin</span>
       </div>
       <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
         Holidays add karein—in dates par duty karne wale staff ko auto-CPL credit milega.
@@ -275,7 +275,7 @@
       <div id="broadcastStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
     </div>
 
-    <!-- Quick Add & Remove Employee Card -->
+    <!-- Quick Add & Remove Employee Card (7 Departments + Sub-Departments) -->
     <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -285,7 +285,7 @@
       </div>
 
       <div class="space-y-2 text-xs">
-        <input type="text" id="addEmpId" placeholder="Emp ID (e.g. MEC-W05, J-5383)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-emerald-500">
+        <input type="text" id="addEmpId" placeholder="Emp ID (e.g. J-337, J-5383)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-emerald-500">
         <input type="text" id="addEmpName" placeholder="Worker Full Name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
         
         <div class="grid grid-cols-2 gap-2">
@@ -307,27 +307,9 @@
             </select>
           </div>
         </div>
-            <label class="block text-[10px] font-bold text-slate-400 mb-1">INBUILT TRADE</label>
-            <select id="addEmpTradeSelect" onchange="handleTradeSelectChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-300 focus:outline-none focus:border-emerald-500">
-              <option value="Welder">Welder</option>
-              <option value="Fitter / Machinist">Fitter / Machinist</option>
-              <option value="Lathe Operator">Lathe Operator</option>
-              <option value="Electrician">Electrician</option>
-              <option value="Wireman">Wireman</option>
-              <option value="Plumber">Plumber</option>
-              <option value="Pipe Fitter">Pipe Fitter</option>
-              <option value="Carpenter">Carpenter</option>
-              <option value="Mason (Mistri)">Mason (Mistri)</option>
-              <option value="Painter">Painter</option>
-              <option value="Helper">Helper</option>
-              <option value="Supervisor">Supervisor</option>
-              <option value="CUSTOM">+ Add Custom Trade</option>
-            </select>
-          </div>
-        </div>
 
         <div id="customTradeBox" class="hidden">
-          <input type="text" id="addCustomTradeInput" placeholder="Naya Trade Name Type Karein (e.g. AC Technician)" class="w-full bg-slate-900 border border-emerald-600 rounded-lg px-3 py-2 text-emerald-400 focus:outline-none">
+          <input type="text" id="addCustomTradeInput" placeholder="Naya Sub-Department Type Karein" class="w-full bg-slate-900 border border-emerald-600 rounded-lg px-3 py-2 text-emerald-400 focus:outline-none">
         </div>
 
         <button id="addEmpBtn" onclick="submitNewEmployee()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition active:scale-95">
@@ -340,7 +322,7 @@
       <div class="mt-3 pt-3 border-t border-slate-800/90">
         <label class="block text-[10px] font-bold text-rose-400 uppercase mb-1.5">🗑️ Remove / Delete Existing Employee</label>
         <div class="flex gap-2 text-xs">
-          <input type="text" id="delEmpIdInput" placeholder="Enter Emp ID to Delete (e.g. MEC-W05)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-rose-500">
+          <input type="text" id="delEmpIdInput" placeholder="Enter Emp ID to Delete (e.g. J-337)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-rose-500">
           <button id="delEmpBtn" onclick="deleteEmployeeFromSheet()" class="px-3.5 py-2 bg-rose-950 hover:bg-rose-800 border border-rose-700 text-rose-200 font-bold rounded-lg transition active:scale-95">
             🗑️ Remove
           </button>
@@ -363,7 +345,7 @@
 
       <div class="space-y-2 text-xs">
         <input type="text" id="newAdmName" placeholder="Supervisor Name (e.g. Gurpreet Singh)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
-        <input type="text" id="newAdmDesig" placeholder="Designation (e.g. Mess Supervisor)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
+        <input type="text" id="newAdmDesig" placeholder="Designation (e.g. Electrical Incharge)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
         
         <div class="grid grid-cols-2 gap-2">
           <input type="password" id="newAdmPin" placeholder="Assign 4-digit PIN" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500">
@@ -482,6 +464,84 @@
       { name: "Afternoon", label: "Afternoon (2PM-10PM)", startHour: 14, startMin: 0, graceMins: 15, dutyHours: 8 },
       { name: "Night", label: "Night (10PM-6AM)", startHour: 22, startMin: 0, graceMins: 15, dutyHours: 8 }
     ];
+
+    const DEPT_SUBDEPT_MAP = {
+      "Electrical": [
+        "Senior DG Operator",
+        "DG Operator",
+        "Sr. Electrician",
+        "Electrician",
+        "Electrician (UPS)",
+        "Motor Winder",
+        "Motor Winder Helper"
+      ],
+      "HVAC": [
+        "Senior HVAC Technician",
+        "HVAC Technician",
+        "AC Technician",
+        "HVAC Helper"
+      ],
+      "STP": [
+        "STP Operator",
+        "STP Helper",
+        "Sewerman"
+      ],
+      "Civil": [
+        "Carpenter",
+        "Mason",
+        "Painter"
+      ],
+      "Plumbing": [
+        "Plumber",
+        "Pump Operator"
+      ],
+      "Mechanical": [
+        "Boiler Incharge",
+        "Boiler Operator",
+        "Fitter Mechanic",
+        "Senior Fitter",
+        "Assistant Fitter",
+        "Welder",
+        "Assistant Welder",
+        "Welder Helper"
+      ],
+      "Fire & Safety": [
+        "Fireman",
+        "Fire Safety Supervisor"
+      ]
+    };
+
+    function handleTradeSelectChange() {
+      const select = document.getElementById('addEmpTradeSelect');
+      const customBox = document.getElementById('customTradeBox');
+      if (select.value === 'CUSTOM') {
+        customBox.classList.remove('hidden');
+        document.getElementById('addCustomTradeInput').focus();
+      } else {
+        customBox.classList.add('hidden');
+      }
+    }
+
+    function syncTradeOptions() {
+      const dept = document.getElementById('addEmpDept').value;
+      const select = document.getElementById('addEmpTradeSelect');
+      const subList = DEPT_SUBDEPT_MAP[dept] || [];
+
+      select.innerHTML = "";
+      subList.forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub;
+        opt.textContent = sub;
+        select.appendChild(opt);
+      });
+
+      const customOpt = document.createElement('option');
+      customOpt.value = "CUSTOM";
+      customOpt.textContent = "+ Add Custom Sub-Dept";
+      select.appendChild(customOpt);
+
+      handleTradeSelectChange();
+    }
 
     function renderPendingLeaves() {
       const box = document.getElementById('pendingLeavesContainer');
@@ -1024,84 +1084,6 @@
       }
     }
 
-    function handleTradeSelectChange() {
-      const select = document.getElementById('addEmpTradeSelect');
-      const customBox = document.getElementById('customTradeBox');
-      if (select.value === 'CUSTOM') {
-        customBox.classList.remove('hidden');
-        document.getElementById('addCustomTradeInput').focus();
-      } else {
-        customBox.classList.add('hidden');
-      }
-    }
-
-    const DEPT_SUBDEPT_MAP = {
-      "Electrical": [
-        "Senior DG Operator",
-        "DG Operator",
-        "Sr. Electrician",
-        "Electrician",
-        "Electrician (UPS)",
-        "Motor Winder",
-        "Motor Winder Helper"
-      ],
-      "HVAC": [
-        "Senior HVAC Technician",
-        "HVAC Technician",
-        "AC Technician",
-        "HVAC Helper"
-      ],
-      "STP": [
-        "STP Operator",
-        "STP Helper",
-        "Sewerman"
-      ],
-      "Civil": [
-        "Carpenter",
-        "Mason",
-        "Painter"
-      ],
-      "Plumbing": [
-        "Plumber",
-        "Pump Operator"
-      ],
-      "Mechanical": [
-        "Boiler Incharge",
-        "Boiler Operator",
-        "Fitter Mechanic",
-        "Senior Fitter",
-        "Assistant Fitter",
-        "Welder",
-        "Assistant Welder",
-        "Welder Helper"
-      ],
-      "Fire & Safety": [
-        "Fireman",
-        "Fire Safety Supervisor"
-      ]
-    };
-
-    function syncTradeOptions() {
-      const dept = document.getElementById('addEmpDept').value;
-      const select = document.getElementById('addEmpTradeSelect');
-      const subList = DEPT_SUBDEPT_MAP[dept] || [];
-
-      select.innerHTML = "";
-      subList.forEach(sub => {
-        const opt = document.createElement('option');
-        opt.value = sub;
-        opt.textContent = sub;
-        select.appendChild(opt);
-      });
-
-      const customOpt = document.createElement('option');
-      customOpt.value = "CUSTOM";
-      customOpt.textContent = "+ Add Custom Sub-Dept";
-      select.appendChild(customOpt);
-
-      handleTradeSelectChange();
-    }
-
     async function unlockAdmin() {
       const pin = document.getElementById('pinInput').value.trim();
       const errBox = document.getElementById('loginError');
@@ -1176,7 +1158,7 @@
             document.getElementById('superAdminSection').classList.add('hidden');
             document.getElementById('superAdminQrSection').classList.add('hidden');
             document.getElementById('superAdminShiftSection').classList.add('hidden');
-            //document.getElementById('superAdminHolidaySection').classList.add('hidden');
+            document.getElementById('superAdminHolidaySection').classList.remove('hidden');
 
             viewBadge.innerText = "Public Safe View";
             viewBadge.className = "text-[10px] text-emerald-400 font-mono";
@@ -1223,7 +1205,7 @@
       const btn = document.getElementById('addEmpBtn');
 
       if (!empId || !name || !trade) {
-        alert("Emp ID, Name aur Trade compulsory hain!");
+        alert("Emp ID, Name aur Sub-Department compulsory hain!");
         return;
       }
 
@@ -1565,7 +1547,7 @@
           status.innerText = "CSV ready! Downloading...";
 
           let csvContent = "data:text/csv;charset=utf-8,";
-          csvContent += "Emp ID,Worker Name,Department,Trade,Regular Days,Sunday Duties (OT),Holiday Duties (OT),CPL Taken,Total Approved Leaves,Total Payable Days,Total Duty Hours,Missing Out-Punch Days\r\n";
+          csvContent += "Emp ID,Worker Name,Department,Sub-Department,Regular Days,Sunday Duties (OT),Holiday Duties (OT),CPL Taken,Total Approved Leaves,Total Payable Days,Total Duty Hours,Missing Out-Punch Days\r\n";
 
           resp.data.forEach(row => {
             csvContent += `"${row.empId}","${row.name}","${row.dept}","${row.trade}",${row.regularDays},${row.sundayDuties},${row.holidayDuties},${row.cplCount},${row.approvedLeaves},${row.totalPayableDays},${row.totalHours},${row.missingOutDays}\r\n`;
@@ -1601,6 +1583,7 @@
       if (monthInput) monthInput.value = `${yr}-${mo}`;
       populateLocationsDropdown();
       renderShiftsList();
+      syncTradeOptions();
     });
   </script>
 </body>
