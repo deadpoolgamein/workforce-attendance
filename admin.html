@@ -292,16 +292,21 @@
           <div>
             <label class="block text-[10px] font-bold text-slate-400 mb-1">DEPARTMENT</label>
             <select id="addEmpDept" onchange="syncTradeOptions()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-300 focus:outline-none focus:border-emerald-500">
-              <option value="Mechanical">Mechanical</option>
               <option value="Electrical">Electrical</option>
+              <option value="HVAC">HVAC</option>
+              <option value="STP">STP</option>
+              <option value="Civil">Civil</option>
               <option value="Plumbing">Plumbing</option>
-              <option value="Carpentry">Carpentry</option>
-              <option value="Civil / Masonry">Civil / Masonry</option>
-              <option value="Mess & Dining">Mess & Dining</option>
-              <option value="Maintenance General">Maintenance General</option>
+              <option value="Mechanical">Mechanical</option>
+              <option value="Fire & Safety">Fire & Safety</option>
             </select>
           </div>
           <div>
+            <label class="block text-[10px] font-bold text-slate-400 mb-1">SUB-DEPARTMENT</label>
+            <select id="addEmpTradeSelect" onchange="handleTradeSelectChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-300 focus:outline-none focus:border-emerald-500">
+            </select>
+          </div>
+        </div>
             <label class="block text-[10px] font-bold text-slate-400 mb-1">INBUILT TRADE</label>
             <select id="addEmpTradeSelect" onchange="handleTradeSelectChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-300 focus:outline-none focus:border-emerald-500">
               <option value="Welder">Welder</option>
@@ -1030,20 +1035,70 @@
       }
     }
 
+    const DEPT_SUBDEPT_MAP = {
+      "Electrical": [
+        "Senior DG Operator",
+        "DG Operator",
+        "Sr. Electrician",
+        "Electrician",
+        "Electrician (UPS)",
+        "Motor Winder",
+        "Motor Winder Helper"
+      ],
+      "HVAC": [
+        "Senior HVAC Technician",
+        "HVAC Technician",
+        "AC Technician",
+        "HVAC Helper"
+      ],
+      "STP": [
+        "STP Operator",
+        "STP Helper",
+        "Sewerman"
+      ],
+      "Civil": [
+        "Carpenter",
+        "Mason",
+        "Painter"
+      ],
+      "Plumbing": [
+        "Plumber",
+        "Pump Operator"
+      ],
+      "Mechanical": [
+        "Boiler Incharge",
+        "Boiler Operator",
+        "Fitter Mechanic",
+        "Senior Fitter",
+        "Assistant Fitter",
+        "Welder",
+        "Assistant Welder",
+        "Welder Helper"
+      ],
+      "Fire & Safety": [
+        "Fireman",
+        "Fire Safety Supervisor"
+      ]
+    };
+
     function syncTradeOptions() {
       const dept = document.getElementById('addEmpDept').value;
       const select = document.getElementById('addEmpTradeSelect');
-      if (dept === "Mechanical") {
-        select.value = "Welder";
-      } else if (dept === "Electrical") {
-        select.value = "Electrician";
-      } else if (dept === "Plumbing") {
-        select.value = "Plumber";
-      } else if (dept === "Carpentry") {
-        select.value = "Carpenter";
-      } else if (dept === "Civil / Masonry") {
-        select.value = "Mason (Mistri)";
-      }
+      const subList = DEPT_SUBDEPT_MAP[dept] || [];
+
+      select.innerHTML = "";
+      subList.forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub;
+        opt.textContent = sub;
+        select.appendChild(opt);
+      });
+
+      const customOpt = document.createElement('option');
+      customOpt.value = "CUSTOM";
+      customOpt.textContent = "+ Add Custom Sub-Dept";
+      select.appendChild(customOpt);
+
       handleTradeSelectChange();
     }
 
