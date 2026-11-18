@@ -1342,6 +1342,112 @@
       });
     }
 
+    function openEditLocationBox() {
+      const sel = document.getElementById('qrLocationSelect');
+      const loc = savedLocations[sel.value];
+      if (!loc) return;
+
+      document.getElementById('editLocId').value = loc.id || "";
+      document.getElementById('editLocOldSecret').value = loc.qrSecret || "";
+      document.getElementById('editLocName').value = loc.name || "";
+      document.getElementById('editLocSecret').value = loc.qrSecret || "";
+      document.getElementById('editLocLat').value = loc.lat || "";
+      document.getElementById('editLocLng').value = loc.lng || "";
+      document.getElementById('editLocRadius').value = loc.radius || 150;
+
+      document.getElementById('editLocationModal').classList.remove('hidden');
+    }
+
+    function closeEditLocationBox() {
+      document.getElementById('editLocationModal').classList.add('hidden');
+    }
+
+    function fillLiveGpsForEditLocation() {
+      if (!navigator.geolocation) {
+        alert("GPS supported nahi hai!");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          document.getElementById('editLocLat').value = pos.coords.latitude.toFixed(6);
+          document.getElementById('editLocLng').value = pos.coords.longitude.toFixed(6);
+        },
+        err => {
+          alert("GPS Error: Location permission allow karein.");
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+
+    async function saveEditedLocationToSheet() {
+      const sel = document.getElementById('qrLocationSelect');
+      const currentIndex = sel.value;
+      const locId = document.getElementById('editLocId').value;
+      const oldSecret = document.getElementById('editLocOldSecret').value;
+      const newName = document.getElementById('editLocName').value.trim();
+      const newSecret = document.getElementById('editLocSecret').value.trim().toUpperCase();
+      const newLat = document.getElementById('editLocLat').value.trim();
+      const newLng = document.getElementById('editLocLng').value.trim();
+      const newRadius = document.getElementById('editLocRadius').value.trim() || 150;
+
+      const status = document.getElementById('saveLocStatus');
+      const btn = document.getElementById('updateLocBtn');
+
+      if (!newName || !newSecret || !newLat || !newLng) {
+        alert("Saari details (Name, QR Secret, Latitude, Longitude) bharni zaroori hain!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Updating Location & QR...";
+      status.classList.remove('hidden');
+      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
+      status.innerText = "Sheet me changes save ho rahe hain...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "UPDATE_LOCATION",
+            pin: authenticatedPin,
+            locId: locId,
+            oldSecret: oldSecret,
+            locName: newName,
+            qrSecret: newSecret,
+            locLat: newLat,
+            locLng: newLng,
+            locRadius: newRadius
+          })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          if (data.locations && data.locations.length > 0) {
+            savedLocations = data.locations;
+          }
+          populateLocationsDropdown();
+          if (savedLocations[currentIndex]) {
+            document.getElementById('qrLocationSelect').value = currentIndex;
+          }
+          renderSelectedLocationQr();
+          closeEditLocationBox();
+
+          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
+          status.innerText = "✔ " + data.message;
+        } else {
+          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (e) {
+        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+        status.innerText = "Network Error!";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "✔ Update Location & Regenerate QR";
+      }
+    }
+
     function toggleNewLocForm() {
       const form = document.getElementById('newLocationForm');
       const arrow = document.getElementById('locToggleArrow');
