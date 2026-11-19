@@ -2,2110 +2,384 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Command Center</title>
-  
-  <!-- PWA App Install Tags -->
-  <link rel="manifest" href="./manifest-admin.json?v=2">
-  <meta name="theme-color" content="#0891b2">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2345/2345338.png">
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js');
-      });
-    }
-  </script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VIP Smart Attendance Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 flex flex-col items-center justify-center font-sans overflow-x-hidden">
 
-  <!-- Step 1: PIN Login -->
-  <div id="loginBox" class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 text-center">
-    <div class="inline-flex p-3 bg-emerald-950/80 border border-emerald-700 rounded-2xl mb-3 text-emerald-400">
-      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-    </div>
-    <h2 class="text-xl font-black tracking-wide text-white uppercase">Admin Console</h2>
-    <p class="text-xs text-slate-400 mt-1 mb-5">Authorized Management Access</p>
-
-    <input type="password" id="pinInput" placeholder="Enter 4-digit PIN" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-2xl font-bold tracking-widest text-emerald-400 mb-4 focus:outline-none focus:border-emerald-500">
-
-    <button id="loginBtn" onclick="unlockAdmin()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-95">
-      UNLOCK CONSOLE
-    </button>
-    <div id="loginError" class="hidden mt-3 text-xs text-rose-400 font-mono"></div>
-  </div>
-
-  <!-- Step 2: Main Dashboard -->
-  <div id="dashboardBox" class="hidden w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
+  <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 sm:p-5 overflow-hidden">
     
-    <!-- Top Header -->
-    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-      <div>
-        <span id="roleBadge" class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">Admin Active</span>
-        <h1 id="welcomeAdminName" class="text-lg font-black text-white mt-1">MASTER CONTROLS</h1>
-      </div>
-      <button onclick="logoutAdmin()" class="text-xs text-slate-400 hover:text-rose-400 font-mono">Logout</button>
-    </div>
-
-    <!-- Pending Leave & CPL Approval Inbox (All Admins) -->
-    <div class="bg-gradient-to-br from-amber-950/50 to-slate-950 border border-amber-700/80 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>📝</span> Pending Leave & CPL Requests
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
+      <div class="min-w-0 flex-1">
+        <span class="inline-block text-[9px] tracking-widest uppercase bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-800 font-mono font-bold">
+          ⚡ SMART TIME-SLOT ACTIVE
         </span>
-        <span id="pendingLeaveCountBadge" class="text-[10px] bg-amber-950 border border-amber-700 text-amber-300 px-2 py-0.5 rounded-full font-mono font-bold">0 Pending</span>
+        <h1 class="text-base sm:text-lg font-black text-white mt-1 leading-tight">PRIVATE ATTENDANCE PORTAL</h1>
       </div>
-      <div id="pendingLeavesContainer" class="space-y-2 text-xs">
-        <p class="text-[11px] text-slate-400 font-mono text-center py-2">Koi pending leave/CPL request nahi hai.</p>
+      <div class="text-right text-[10px] font-mono text-slate-400 shrink-0 leading-snug">
+        <div>IN: 08:40 - 08:59 AM</div>
+        <div>OUT: 05:15 - 05:32 PM</div>
       </div>
     </div>
 
-    <!-- NEW: Live Staff Directory (Search & Department-Wise Filter) -->
-    <div class="bg-slate-950 border border-sky-800/80 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>📋</span> Staff Directory & Search
-        </span>
-        <span id="staffDirectoryCountBadge" class="text-[10px] bg-sky-950 border border-sky-700 text-sky-300 px-2 py-0.5 rounded-full font-mono font-bold">0 Staff</span>
-      </div>
+    <!-- Employee ID -->
+    <div class="mb-3 text-xs">
+      <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">EMPLOYEE ID</label>
+      <input type="text" id="empId" value="J-5383" placeholder="Enter Emp ID" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase text-sm focus:outline-none focus:border-indigo-500">
+    </div>
 
-      <div class="grid grid-cols-2 gap-2 mb-2.5 text-xs">
-        <input type="text" id="staffSearchInput" oninput="filterStaffDirectory()" placeholder="🔍 Search Name or ID..." class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-sky-500">
-        <select id="staffDeptFilter" onchange="filterStaffDirectory()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-sky-300 font-semibold focus:outline-none focus:border-sky-500">
-          <option value="ALL">All Departments</option>
+    <!-- Duty Action & Shift -->
+    <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+      <div class="min-w-0">
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">DUTY ACTION</label>
+        <select id="dutyType" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 text-emerald-400 font-bold text-xs truncate focus:outline-none focus:border-indigo-500">
+          <option value="ON-DUTY">🟢 ON-DUTY (8:40-8:59)</option>
+          <option value="OFF-DUTY">🔴 OFF-DUTY (5:15-5:32)</option>
         </select>
       </div>
-
-      <!-- Scrollable Staff Cards Container -->
-      <div id="staffDirectoryList" class="max-h-60 overflow-y-auto space-y-1.5 pr-1 text-xs">
-        <p class="text-[11px] text-slate-400 font-mono text-center py-3">Loading staff list...</p>
+      <div class="min-w-0">
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">SHIFT</label>
+        <select id="shift" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 text-slate-200 text-xs truncate focus:outline-none focus:border-indigo-500">
+          <option value="General">General (9AM-6PM)</option>
+          <option value="Morning">Morning (6AM-2PM)</option>
+          <option value="Afternoon">Afternoon (2PM-10PM)</option>
+          <option value="Night">Night (10PM-6AM)</option>
+        </select>
       </div>
     </div>
 
-    <!-- ALL ADMINS: Official Holiday Manager (CPL Eligible Days) -->
-    <div id="superAdminHolidaySection" class="bg-slate-950 border border-amber-800/80 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>🎉</span> Official Holiday Manager
-        </span>
-        <span class="text-[10px] text-amber-300 font-mono font-bold">Super Admin & Admin</span>
-      </div>
-      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Holidays add karein—in dates par duty karne wale staff ko auto-CPL credit milega.
-      </p>
-
-      <div id="adminHolidaysList" class="space-y-1.5 mb-3 text-[11px] font-mono"></div>
-
-      <div class="pt-2.5 border-t border-slate-800 space-y-2 text-xs">
-        <div class="grid grid-cols-2 gap-2">
-          <input type="date" id="newHolDate" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-300 font-mono focus:outline-none">
-          <input type="text" id="newHolName" placeholder="Holiday Name (e.g. Gurpurab)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none">
-        </div>
-        <button id="saveHolBtn" onclick="addHolidayToSheet()" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shadow transition active:scale-95">
-          ➕ Add Official Holiday
-        </button>
-        <div id="holStatus" class="hidden text-[11px] text-center font-mono mt-1"></div>
-      </div>
+    <!-- QR Scanner Box -->
+    <div id="qrBox" class="hidden mb-4 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2">
+      <div id="reader" class="w-full rounded-lg overflow-hidden"></div>
+      <button onclick="stopQrScanner()" class="w-full mt-2 py-2 bg-rose-600 text-white font-bold text-xs rounded-lg">Cancel QR Scan</button>
     </div>
 
-    <!-- SUPER ADMIN ONLY: Manage Admins, Supervisors & Department Heads (Add, Edit Name/PIN, Delete) -->
-    <div id="superAdminSection" class="hidden bg-slate-950 border border-cyan-800/80 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>🛡</span> Manage Admins, Supervisors & Heads
-        </span>
-        <span class="text-[10px] text-cyan-400 font-mono font-bold">Super Admin Only</span>
-      </div>
-      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Admins, Supervisors, aur Section Heads (Boiler Incharge, Sr. Electrician, etc.) ko add, edit ya delete karein.
-      </p>
-
-      <div id="activeAdminsListBox" class="space-y-1.5 mb-3 text-[11px] font-mono"></div>
-
-      <div id="editAdminModal" class="hidden bg-slate-900 border border-cyan-600 rounded-xl p-3 mb-3 space-y-2 text-xs">
-        <div class="flex items-center justify-between">
-          <span class="font-bold text-cyan-300">✏️ Edit Admin / Supervisor / Head</span>
-          <button onclick="closeEditAdminBox()" class="text-slate-400 hover:text-rose-400 text-xs">✖</button>
-        </div>
-        <input type="hidden" id="editAdmId">
-        <input type="text" id="editAdmName" placeholder="Updated Name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
-        <input type="text" id="editAdmDesig" placeholder="Updated Designation / Head Role" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
-        <div class="grid grid-cols-2 gap-2">
-          <input type="text" id="editAdmPin" placeholder="New 4-digit PIN" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-400 font-mono">
-          <select id="editAdmRole" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-cyan-300">
-            <option value="DEPT_ADMIN">Admin / Supervisor</option>
-            <option value="SECTION_HEAD">Department / Section Head</option>
-            <option value="SUPER_ADMIN">Super Admin</option>
-          </select>
-        </div>
-        <button onclick="saveEditedAdminUser()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition">
-          ✔ Save Changes
-        </button>
-      </div>
-
-      <div class="pt-2.5 border-t border-slate-800 space-y-2 text-xs">
-        <span class="block text-[10px] font-bold text-cyan-300 uppercase">➕ Add New Admin / Supervisor / Head</span>
-        <input type="text" id="newAdmName" placeholder="Full Name (e.g. Gaurav Sharma, Harvinder Singh)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
-        <input type="text" id="newAdmDesig" placeholder="Role / Head Title (e.g. Boiler Incharge, Senior DG Operator)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
-        
-        <div class="grid grid-cols-2 gap-2">
-          <input type="password" id="newAdmPin" placeholder="Assign 4-digit PIN" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500">
-          <select id="newAdmRole" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-cyan-300 font-semibold focus:outline-none focus:border-cyan-500">
-            <option value="DEPT_ADMIN">Admin / Supervisor</option>
-            <option value="SECTION_HEAD">Department / Section Head</option>
-            <option value="SUPER_ADMIN">Super Admin</option>
-          </select>
-        </div>
-
-        <button id="addAdmBtn" onclick="submitNewAdminUser()" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow transition active:scale-95">
-          Authorize & Create PIN
-        </button>
-      </div>
-      <div id="addAdmStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
+    <!-- Live Front Camera Box -->
+    <div id="cameraBox" class="hidden mb-4 bg-slate-950 border border-indigo-700 rounded-xl p-3 text-center">
+      <p id="countdownText" class="text-xs font-mono text-indigo-400 font-bold mb-2">Position Face for Verification...</p>
+      <video id="video" autoplay playsinline class="w-full h-56 object-cover rounded-lg border border-slate-800 bg-black"></video>
+      <canvas id="canvas" class="hidden"></canvas>
     </div>
 
-    <!-- Quick Add & Remove Employee Card (Dynamic Department & Sub-Department Add/Remove) -->
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>👷</span> Add / Remove Employee & Depts
-        </span>
-        <span class="text-[10px] text-slate-400 font-mono">Direct to Sheet</span>
-      </div>
-
-      <div class="space-y-2.5 text-xs">
-        <input type="text" id="addEmpId" placeholder="Emp ID (e.g. J-337, J-5383)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-emerald-500">
-        <input type="text" id="addEmpName" placeholder="Worker Full Name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
-        
-        <div>
-          <label class="block text-[10px] font-bold text-slate-400 mb-1">DEPARTMENT (Add / Delete Option)</label>
-          <div class="flex gap-1.5">
-            <select id="addEmpDept" onchange="syncTradeOptions()" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-            </select>
-            <button type="button" onclick="promptAddNewDepartment()" title="Add New Department" class="px-2.5 py-2 bg-emerald-950 hover:bg-emerald-800 border border-emerald-700 text-emerald-300 font-bold rounded-lg transition">
-              ➕
-            </button>
-            <button type="button" onclick="deleteSelectedDepartment()" title="Delete Selected Department" class="px-2.5 py-2 bg-rose-950 hover:bg-rose-800 border border-rose-700 text-rose-300 font-bold rounded-lg transition">
-              🗑️
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[10px] font-bold text-slate-400 mb-1">SUB-DEPARTMENT (Add / Delete Option)</label>
-          <div class="flex gap-1.5">
-            <select id="addEmpTradeSelect" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-            </select>
-            <button type="button" onclick="promptAddNewSubDepartment()" title="Add New Sub-Department" class="px-2.5 py-2 bg-emerald-950 hover:bg-emerald-800 border border-emerald-700 text-emerald-300 font-bold rounded-lg transition">
-              ➕
-            </button>
-            <button type="button" onclick="deleteSelectedSubDepartment()" title="Delete Selected Sub-Department" class="px-2.5 py-2 bg-rose-950 hover:bg-rose-800 border border-rose-700 text-rose-300 font-bold rounded-lg transition">
-              🗑️
-            </button>
-          </div>
-        </div>
-
-        <button id="addEmpBtn" onclick="submitNewEmployee()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition active:scale-95">
-          ➕ Save Employee to Database
-        </button>
-      </div>
-      <div id="addEmpStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
-
-      <div class="mt-3 pt-3 border-t border-slate-800/90">
-        <label class="block text-[10px] font-bold text-rose-400 uppercase mb-1.5">🗑️ Remove / Delete Existing Employee</label>
-        <div class="flex gap-2 text-xs">
-          <input type="text" id="delEmpIdInput" placeholder="Enter Emp ID to Delete (e.g. J-337)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-rose-500">
-          <button id="delEmpBtn" onclick="deleteEmployeeFromSheet()" class="px-3.5 py-2 bg-rose-950 hover:bg-rose-800 border border-rose-700 text-rose-200 font-bold rounded-lg transition active:scale-95">
-            🗑️ Remove
-          </button>
-        </div>
-        <div id="delEmpStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
-      </div>
-    </div>
-
-    <!-- SUPER ADMIN ONLY: Location & Printable QR Poster Studio -->
-    <div id="superAdminQrSection" class="hidden bg-gradient-to-br from-indigo-950/60 to-slate-950 border border-indigo-700/80 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>🏁</span> Location & QR Poster Studio
-        </span>
-        <span class="text-[10px] text-cyan-400 font-mono font-bold">Super Admin Only</span>
-      </div>
-      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Existing locations ka QR print/delete karein ya live GPS se naya gate/plant QR banayein.
-      </p>
-
-      <div class="mb-3">
-        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Select Location to View / Edit / Print / Delete</label>
-        <div class="flex gap-1.5">
-          <select id="qrLocationSelect" onchange="renderSelectedLocationQr()" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
-          </select>
-          <button onclick="openEditLocationBox()" title="Edit Location & QR Details" class="px-2.5 py-2 bg-amber-950 hover:bg-amber-800 border border-amber-700 text-amber-300 font-bold text-xs rounded-xl transition active:scale-95">
-            ✏️ Edit
-          </button>
-          <button onclick="deleteSelectedLocation()" title="Delete Selected Location" class="px-2.5 py-2 bg-rose-950 hover:bg-rose-800 border border-rose-700 text-rose-300 font-bold text-xs rounded-xl transition active:scale-95">
-            🗑️
-          </button>
-        </div>
-      </div>
-
-      <!-- Inline Edit Existing Location & QR Box -->
-      <div id="editLocationModal" class="hidden bg-slate-900 border border-amber-600 rounded-xl p-3 mb-3 space-y-2 text-xs">
-        <div class="flex items-center justify-between">
-          <span class="font-bold text-amber-300">✏️ Edit Selected Location & QR</span>
-          <button onclick="closeEditLocationBox()" class="text-slate-400 hover:text-rose-400 text-xs">✖</button>
-        </div>
-        <input type="hidden" id="editLocId">
-        <input type="hidden" id="editLocOldSecret">
-        
-        <div>
-          <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Location Name</label>
-          <input type="text" id="editLocName" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
-        </div>
-
-        <div>
-          <label class="block text-[9px] text-slate-400 uppercase mb-0.5">QR Secret Code (Text inside QR)</label>
-          <input type="text" id="editLocSecret" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-amber-300 font-mono uppercase">
-        </div>
-
-        <div class="grid grid-cols-3 gap-1.5">
-          <div>
-            <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Latitude</label>
-            <input type="number" step="any" id="editLocLat" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-200 font-mono text-[11px]">
-          </div>
-          <div>
-            <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Longitude</label>
-            <input type="number" step="any" id="editLocLng" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-200 font-mono text-[11px]">
-          </div>
-          <div class="flex flex-col justify-end">
-            <button type="button" onclick="fillLiveGpsForEditLocation()" class="w-full py-1.5 bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 font-bold text-[10px] rounded-lg transition">
-              📍 Live GPS
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Allowed Geofence Radius (Meters)</label>
-          <input type="number" id="editLocRadius" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono">
-        </div>
-
-        <button id="updateLocBtn" onclick="saveEditedLocationToSheet()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition">
-          ✔ Update Location & Regenerate QR
-        </button>
-      </div>
-
-      <div id="qrPreviewCard" class="bg-white text-slate-900 rounded-xl p-4 text-center shadow-inner mb-3">
-        <div class="border-2 border-slate-900 rounded-lg p-3">
-          <p class="text-[10px] font-black tracking-widest uppercase text-slate-600">CHANDIGARH GROUP OF COLLEGES</p>
-          <h3 id="posterLocName" class="text-base font-black text-slate-950 uppercase mt-0.5">WORKSHOP</h3>
-          <p class="text-[10px] font-bold text-emerald-700 uppercase mb-2">Department of Maintenance Services</p>
-          
-          <div id="qrCanvasContainer" class="flex justify-center my-2"></div>
-          
-          <p id="posterQrSecret" class="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 inline-block px-2 py-0.5 rounded border border-slate-300 mt-1">CGC_LOC_WORKSHOP_1</p>
-          <p id="posterCoords" class="text-[9px] font-mono text-slate-500 mt-1">GPS Radius: 150m Geofence Protected</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2 mb-3">
-        <button onclick="printOfficialQrPoster()" class="py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow flex items-center justify-center gap-1.5 transition active:scale-95">
-          <span>🖨️</span> PRINT A4 POSTER
-        </button>
-        <button onclick="downloadQrPosterPng()" class="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95">
-          <span>⬇️</span> SAVE QR IMAGE
-        </button>
-      </div>
-
-      <div class="pt-3 border-t border-slate-800/90">
-        <button onclick="toggleNewLocForm()" class="w-full text-left text-[11px] font-bold text-emerald-400 flex items-center justify-between py-1">
-          <span>➕ Add New Campus Location / Plant Room</span>
-          <span id="locToggleArrow">▼</span>
-        </button>
-
-        <div id="newLocationForm" class="hidden mt-2.5 space-y-2 text-xs">
-          <input type="text" id="newLocName" placeholder="Location Name (e.g. Mess Block A, Substation)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
-          
-          <div class="grid grid-cols-3 gap-1.5">
-            <input type="number" step="any" id="newLocLat" placeholder="Latitude" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 font-mono text-[11px] focus:outline-none">
-            <input type="number" step="any" id="newLocLng" placeholder="Longitude" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 font-mono text-[11px] focus:outline-none">
-            <button type="button" onclick="fillCurrentGpsForLocation()" class="bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 font-bold text-[10px] rounded-lg px-2 py-2 transition">
-              📍 Get Live GPS
-            </button>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Allowed Radius (Meters)</label>
-              <input type="number" id="newLocRadius" value="150" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
-            </div>
-            <div>
-              <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Custom QR Code (Optional)</label>
-              <input type="text" id="newLocSecret" placeholder="Auto-generated" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-300 font-mono uppercase">
-            </div>
-          </div>
-
-          <button id="saveLocBtn" onclick="saveNewLocationToSheet()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition active:scale-95">
-            Save Location & Generate QR
-          </button>
-          <div id="saveLocStatus" class="hidden text-[11px] text-center font-mono mt-1"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUPER ADMIN ONLY: Dynamic Shift & Timing Manager -->
-    <div id="superAdminShiftSection" class="hidden bg-slate-950 border border-purple-800/80 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>⏰</span> Shift & Duty Timing Manager
-        </span>
-        <span class="text-[10px] text-cyan-400 font-mono font-bold">Super Admin Only</span>
-      </div>
-      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Active shifts dekhein, delete karein, ya nayi shift add/update karein.
-      </p>
-
-      <div id="activeShiftsList" class="space-y-1.5 mb-3 text-[11px] font-mono"></div>
-
-      <div class="pt-2.5 border-t border-slate-800 space-y-2 text-xs">
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Shift Code (Short Name)</label>
-            <input type="text" id="newShiftName" placeholder="e.g. Mess-Morning" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
-          </div>
-          <div>
-            <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Portal Display Label</label>
-            <input type="text" id="newShiftLabel" placeholder="e.g. Mess (7AM-4PM)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2">
-          <div>
-            <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Start Time</label>
-            <input type="time" id="newShiftTime" value="09:00" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-purple-300 font-mono">
-          </div>
-          <div>
-            <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Grace (Mins)</label>
-            <input type="number" id="newShiftGrace" value="15" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono">
-          </div>
-          <div>
-            <label class="block text-[9px] text-slate-400 uppercase mb-0.5">Duty Hours</label>
-            <input type="number" step="0.5" id="newShiftHours" value="9" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono">
-          </div>
-        </div>
-
-        <button id="saveShiftBtn" onclick="saveShiftToSheet()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow transition active:scale-95">
-          Save / Update Shift Timing
-        </button>
-        <div id="saveShiftStatus" class="hidden text-[11px] text-center font-mono mt-1"></div>
-      </div>
-    </div>
-
-    <!-- Missing & Late Staff Alert -->
-    <div class="bg-gradient-to-br from-rose-950/40 to-slate-950 border border-rose-800/70 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>🚨</span> Missing & Late Staff Alert
-        </span>
-        <span class="text-[10px] text-slate-400 font-mono">Shift Grace Over</span>
-      </div>
-      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Check karein kaunse plant rooms (DG, Boiler, HTP) ya critical technicians abhi tak absent hain.
-      </p>
-
-      <button id="alertBtn" onclick="generateMissingStaffWhatsAppAlert()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-xl shadow flex items-center justify-center gap-2 transition active:scale-95">
-        <span>⚠️</span> SCAN & BROADCAST MISSING STAFF
+    <!-- Main Scan Button -->
+    <div id="actionButtons" class="space-y-3">
+      <button onclick="startVipQrFlow()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+        <span>📷</span> SCAN LOCATION QR CODE
       </button>
-      <div id="missingAlertStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
+
+      <!-- Direct Location Punch (Fixed Responsive Layout with min-w-0 & truncate) -->
+      <div class="pt-2 border-t border-slate-800/80">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[10px] font-bold text-slate-400 uppercase">OR DIRECT LOCATION PUNCH:</span>
+          <span id="locSyncBadge" class="text-[10px] font-mono text-emerald-400">Syncing...</span>
+        </div>
+
+        <div class="flex items-center gap-2 w-full">
+          <select id="directLocationSelect" class="flex-1 min-w-0 w-0 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-medium truncate focus:outline-none focus:border-emerald-500">
+            <option value="CGC_LOC_WORKSHOP_1">Workshop (CGC_LOC_WORKSHOP_1)</option>
+          </select>
+          <button onclick="startDirectLocationPunch()" class="shrink-0 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow transition active:scale-95">
+            Punch
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Monthly Salary & Duty Hours Exporter -->
-    <div class="bg-gradient-to-br from-amber-950/40 to-slate-950 border border-amber-800/80 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>📑</span> Monthly Attendance & Payroll
-        </span>
-        <span class="text-[10px] text-slate-400 font-mono">Excel / CSV</span>
-      </div>
-      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Regular days, Sunday roster, Holiday duties, and CPL/Leaves auto-segregated.
-      </p>
+    <!-- Status Box -->
+    <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
 
-      <div class="flex gap-2 mb-2">
-        <input type="month" id="reportMonthSelect" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-amber-400 focus:outline-none focus:border-amber-500">
-        <button id="exportBtn" onclick="downloadMonthlyReportCSV()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-lg shadow transition active:scale-95">
-          Export CSV
-        </button>
-      </div>
-      <div id="exportStatus" class="hidden text-[11px] text-center font-mono"></div>
-    </div>
-
-    <!-- 1-Click WhatsApp Group Broadcast -->
-    <div class="bg-gradient-to-br from-emerald-950/60 to-slate-950 border border-emerald-800/80 rounded-2xl p-4 mb-4 shadow-lg">
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>📢</span> WhatsApp Group Broadcast
-        </span>
-        <span class="text-[10px] text-slate-400 font-mono">Live Report</span>
-      </div>
-      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
-        Real-time count nikaal kar direct group me formatted report post karein.
-      </p>
-
-      <button id="broadcastBtn" onclick="shareLiveReportToWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
-        <span>📲</span> SHARE TODAY'S REPORT TO GROUP
+    <!-- WhatsApp Post Options -->
+    <div id="whatsappShareBox" class="hidden mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/80 rounded-xl space-y-2">
+      <p class="text-[11px] text-emerald-300 font-bold text-center uppercase tracking-wider">📢 Post Attendance to WhatsApp Group</p>
+      <button onclick="sharePunchWithPhoto()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+        <span>📲</span> POST TO WHATSAPP (WITH PHOTO)
       </button>
-      <div id="broadcastStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
-    </div>
-
-    <!-- Mobile Punch Toggle Card -->
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
-      <div class="flex items-center justify-between mb-1">
-        <span class="text-xs font-bold text-slate-300">Mobile Direct Punch</span>
-        <span id="statusIndicator" class="text-xs font-mono font-bold text-amber-400">Loading...</span>
-      </div>
-      <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
-        OFF karne par workers sirf campus locations ke physical QR scan kar sakenge.
-      </p>
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="setMobilePermission('OFF')" class="py-2.5 bg-rose-600 hover:bg-rose-700 font-bold text-xs rounded-xl text-white shadow transition active:scale-95">
-          ⛔ DISABLE (Off)
-        </button>
-        <button onclick="setMobilePermission('ON')" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 font-bold text-xs rounded-xl text-white shadow transition active:scale-95">
-          ✅ ENABLE (On)
-        </button>
-      </div>
-    </div>
-
-    <!-- Change Own PIN Card -->
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
-      <span class="text-xs font-bold text-slate-300 block mb-2">Change Your PIN</span>
-      <div class="flex gap-2">
-        <input type="password" id="newPinVal" placeholder="New 4-digit PIN" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-emerald-400 focus:outline-none focus:border-emerald-500">
-        <button onclick="updateAdminPin()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold text-xs rounded-lg text-white transition active:scale-95">
-          Update PIN
-        </button>
-      </div>
-      <div id="pinChangeStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
-    </div>
-
-    <!-- Dynamic Cloud Shortcuts -->
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-slate-300">Cloud Shortcuts</span>
-        <span id="viewModeBadge" class="text-[10px] text-emerald-400 font-mono">Public Safe View</span>
-      </div>
-      <div class="flex flex-col gap-2 text-xs">
-        <a id="sheetLinkTag" href="#" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-between text-emerald-400 font-semibold transition">
-          <span class="flex items-center gap-2">
-            <span>📊</span>
-            <span id="sheetLinkText">Open Attendance Sheet (Public View)</span>
-          </span>
-          <span>↗</span>
-        </a>
-
-        <a id="driveLinkTag" href="#" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-between text-blue-400 font-semibold transition">
-          <span class="flex items-center gap-2">
-            <span>📁</span>
-            <span id="driveLinkText">Open Verified Photos (Public View)</span>
-          </span>
-          <span>↗</span>
-        </a>
-
-        <a href="./index.html" target="_blank" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-between text-slate-300 font-semibold transition">
-          <span class="flex items-center gap-2">
-            <span>📱</span>
-            <span>Open Worker Scan Portal</span>
-          </span>
-          <span>↗</span>
-        </a>
-      </div>
+      <button onclick="sharePunchTextOnly()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95">
+        <span>💬</span> Post Text Slip Only
+      </button>
     </div>
 
     <!-- Footer -->
-    <div class="pt-2 text-center border-t border-slate-800">
-      <p class="text-[10px] text-slate-400 uppercase font-mono tracking-wider">System Architect & Super Admin: Sandeep Singh (J-5383)</p>
+    <div class="mt-4 pt-3 text-center border-t border-slate-800">
+      <p class="text-[10px] text-slate-500 uppercase font-mono tracking-wider">System Architect: Sandeep Singh</p>
     </div>
   </div>
 
   <script>
     // ========================================================
-    // CONFIGURE YOUR CLOUD & SCRIPT URLS HERE:
-    // ========================================================
+    // CONFIGURE YOUR APPS SCRIPT WEB APP URL HERE:
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
-
-    // Public Sheets & Photos (For Supervisors / Viewers)
-    const PUBLIC_SHEET_URL = "https://docs.google.com/spreadsheets/d/1MkoMROL8seeYB4KgpSRxFVMV8qmMPgHTADy4NF1Ci-8/edit?usp=sharing";
-    const PUBLIC_DRIVE_URL = "https://drive.google.com/drive/folders/1kA3wur3nnLPvoML6S8ahUFJ9a5_XE-LY";
-
-    // Master Sheets & Photos (For Super Admin: Sandeep Singh)
-    const MASTER_SHEET_URL = "https://docs.google.com/spreadsheets/d/1KthpLeh5lqCcBNEnmJ3Wfsm14cPbxPiLLO_TpSUYyZ4/edit?usp=sharing";
-    const MASTER_DRIVE_URL = "https://drive.google.com/drive/folders/1aede5nJeuV7o9Vzmfoozg9fZZrvBzoM6";
     // ========================================================
 
-    let authenticatedPin = "";
-    let currentAdminRole = "";
-    let savedHolidays = [];
-    let pendingLeaves = [];
-    let activeAdminsList = [];
-    let allEmployeesList = [];
+    let html5QrCode = null;
+    let scannedSecret = "";
+    let userLat = 30.7499;
+    let userLng = 76.6432;
+    let lastCapturedPhoto = "";
+    let lastWhatsAppMessage = "";
 
-    let deptSubDeptMap = {
-      "Electrical": ["Senior DG Operator", "DG Operator", "Sr. Electrician", "Electrician", "Electrician (UPS)", "Motor Winder", "Motor Winder Helper"],
-      "HVAC": ["Senior HVAC Technician", "HVAC Technician", "AC Technician", "HVAC Helper"],
-      "STP": ["STP Operator", "STP Helper", "Sewerman"],
-      "Civil": ["Carpenter", "Mason", "Painter"],
-      "Plumbing": ["Plumber", "Pump Operator"],
-      "Mechanical": ["Boiler Incharge", "Boiler Operator", "Fitter Mechanic", "Senior Fitter", "Assistant Fitter", "Welder", "Assistant Welder", "Welder Helper"],
-      "Fire & Safety": ["Fireman", "Fire Safety Supervisor"]
-    };
-
-    let savedLocations = [
-      { id: "LOC-01", name: "Workshop", qrSecret: "CGC_LOC_WORKSHOP_1", lat: 30.7499, lng: 76.6432, radius: 150 },
-      { id: "LOC-02", name: "Dg Room", qrSecret: "CGC_LOC_DG_ROOM_1", lat: 30.7499, lng: 76.6432, radius: 150 },
-      { id: "LOC-03", name: "Boiler", qrSecret: "CGC_LOC_BOILER_ROOM_1", lat: 30.7499, lng: 76.6432, radius: 150 },
-      { id: "LOC-04", name: "Htp plant", qrSecret: "CGC_LOC_HTP_PLANT_1", lat: 30.7499, lng: 76.6432, radius: 150 }
-    ];
-
-    let savedShifts = [
-      { name: "General", label: "General (9AM-6PM)", startHour: 9, startMin: 0, graceMins: 15, dutyHours: 9 },
-      { name: "Morning", label: "Morning (6AM-2PM)", startHour: 6, startMin: 0, graceMins: 15, dutyHours: 8 },
-      { name: "Afternoon", label: "Afternoon (2PM-10PM)", startHour: 14, startMin: 0, graceMins: 15, dutyHours: 8 },
-      { name: "Night", label: "Night (10PM-6AM)", startHour: 22, startMin: 0, graceMins: 15, dutyHours: 8 }
-    ];
-
-    // ----------------------------------------------------
-    // STAFF DIRECTORY SEARCH & DEPARTMENT FILTER
-    // ----------------------------------------------------
-    function populateStaffDeptFilter() {
-      const filterSel = document.getElementById('staffDeptFilter');
-      if (!filterSel) return;
-      filterSel.innerHTML = `<option value="ALL">All Departments (${allEmployeesList.length})</option>`;
-      Object.keys(deptSubDeptMap).forEach(dept => {
-        const count = allEmployeesList.filter(e => e.dept.toLowerCase() === dept.toLowerCase()).length;
-        const opt = document.createElement('option');
-        opt.value = dept;
-        opt.textContent = `${dept} (${count})`;
-        filterSel.appendChild(opt);
-      });
-    }
-
-    function filterStaffDirectory() {
-      const query = (document.getElementById('staffSearchInput').value || "").trim().toLowerCase();
-      const deptFilter = document.getElementById('staffDeptFilter').value;
-      const listBox = document.getElementById('staffDirectoryList');
-      const countBadge = document.getElementById('staffDirectoryCountBadge');
-
-      const filtered = allEmployeesList.filter(emp => {
-        const matchesDept = (deptFilter === "ALL") || (emp.dept.toLowerCase() === deptFilter.toLowerCase());
-        const matchesQuery = !query ||
-          emp.name.toLowerCase().includes(query) ||
-          emp.id.toLowerCase().includes(query) ||
-          emp.trade.toLowerCase().includes(query);
-        return matchesDept && matchesQuery;
-      });
-
-      countBadge.innerText = `${filtered.length} Staff`;
-
-      if (filtered.length === 0) {
-        listBox.innerHTML = `<p class="text-[11px] text-slate-400 font-mono text-center py-3">Koi employee match nahi hua.</p>`;
-        return;
+    function refreshGps() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+          },
+          err => {},
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
       }
-
-      listBox.innerHTML = "";
-      filtered.forEach(emp => {
-        const row = document.createElement('div');
-        row.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-2 rounded-xl gap-2";
-        row.innerHTML = `
-          <div class="flex-1">
-            <div class="flex items-center gap-1.5">
-              <span class="font-bold text-white">${emp.name}</span>
-              <span class="text-[10px] font-mono bg-sky-950 text-sky-300 px-1.5 py-0.5 rounded border border-sky-800">${emp.id}</span>
-            </div>
-            <div class="text-[10px] text-slate-400 mt-0.5">${emp.dept} • <span class="text-slate-300">${emp.trade}</span></div>
-          </div>
-          <button onclick="quickFillDeleteEmp('${emp.id}')" title="Select ID to Delete" class="px-2 py-1 bg-slate-800 hover:bg-rose-950 border border-slate-700 hover:border-rose-700 text-slate-300 hover:text-rose-300 rounded text-[10px] font-mono transition">
-            🗑️
-          </button>
-        `;
-        listBox.appendChild(row);
-      });
     }
+    refreshGps();
 
-    function quickFillDeleteEmp(empId) {
-      const delInput = document.getElementById('delEmpIdInput');
-      delInput.value = empId;
-      delInput.scrollIntoView({ behavior: "smooth", block: "center" });
-      delInput.focus();
-    }
-
-    // ----------------------------------------------------
-    // DYNAMIC DEPARTMENT & SUB-DEPARTMENT RENDER & CRUD
-    // ----------------------------------------------------
-    function renderDeptDropdowns() {
-      const deptSel = document.getElementById('addEmpDept');
-      const currentVal = deptSel.value;
-      deptSel.innerHTML = "";
-
-      Object.keys(deptSubDeptMap).forEach(dept => {
-        const opt = document.createElement('option');
-        opt.value = dept;
-        opt.textContent = dept;
-        deptSel.appendChild(opt);
-      });
-
-      if (currentVal && deptSubDeptMap[currentVal]) {
-        deptSel.value = currentVal;
-      }
-      syncTradeOptions();
-      populateStaffDeptFilter();
-    }
-
-    function syncTradeOptions() {
-      const dept = document.getElementById('addEmpDept').value;
-      const select = document.getElementById('addEmpTradeSelect');
-      const subList = deptSubDeptMap[dept] || [];
-
-      select.innerHTML = "";
-      subList.forEach(sub => {
-        const opt = document.createElement('option');
-        opt.value = sub;
-        opt.textContent = sub;
-        select.appendChild(opt);
-      });
-    }
-
-    async function promptAddNewDepartment() {
-      const newDept = prompt("Naye Department ka naam likhein (e.g. Horticulture, Security):");
-      if (!newDept || !newDept.trim()) return;
-
-      const firstSub = prompt(`"${newDept.trim()}" ke andar pehla Sub-Department / Designation likhein (e.g. Gardener, Guard):`) || "General Staff";
+    async function loadLiveConfig() {
+      const locSel = document.getElementById('directLocationSelect');
+      const shiftSel = document.getElementById('shift');
+      const badge = document.getElementById('locSyncBadge');
 
       try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "ADD_DEPT_SUBDEPT",
-            pin: authenticatedPin,
-            deptName: newDept.trim(),
-            subDeptName: firstSub.trim()
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          deptSubDeptMap = data.deptMap;
-          renderDeptDropdowns();
-          document.getElementById('addEmpDept').value = newDept.trim();
-          syncTradeOptions();
-          alert(data.message);
-        } else {
-          alert("Error: " + data.message);
-        }
-      } catch (e) {
-        alert("Network Error!");
-      }
-    }
-
-    async function deleteSelectedDepartment() {
-      const dept = document.getElementById('addEmpDept').value;
-      if (!dept) return;
-      if (!confirm(`Kya aap sach me poora "${dept}" Department aur uske sub-departments delete karna chahte hain?`)) return;
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "DELETE_DEPT_SUBDEPT",
-            pin: authenticatedPin,
-            deptName: dept,
-            subDeptName: ""
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          deptSubDeptMap = data.deptMap;
-          renderDeptDropdowns();
-          alert(data.message);
-        } else {
-          alert("Error: " + data.message);
-        }
-      } catch (e) {
-        alert("Network Error!");
-      }
-    }
-
-    async function promptAddNewSubDepartment() {
-      const dept = document.getElementById('addEmpDept').value;
-      if (!dept) {
-        alert("Pehle Department select karein!");
-        return;
-      }
-      const newSub = prompt(`"${dept}" Department me naya Sub-Department / Designation likhein:`);
-      if (!newSub || !newSub.trim()) return;
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "ADD_DEPT_SUBDEPT",
-            pin: authenticatedPin,
-            deptName: dept,
-            subDeptName: newSub.trim()
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          deptSubDeptMap = data.deptMap;
-          syncTradeOptions();
-          document.getElementById('addEmpTradeSelect').value = newSub.trim();
-          alert(data.message);
-        } else {
-          alert("Error: " + data.message);
-        }
-      } catch (e) {
-        alert("Network Error!");
-      }
-    }
-
-    async function deleteSelectedSubDepartment() {
-      const dept = document.getElementById('addEmpDept').value;
-      const sub = document.getElementById('addEmpTradeSelect').value;
-      if (!dept || !sub) return;
-      if (!confirm(`Kya aap sach me "${sub}" (${dept}) ko delete karna chahte hain?`)) return;
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "DELETE_DEPT_SUBDEPT",
-            pin: authenticatedPin,
-            deptName: dept,
-            subDeptName: sub
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          deptSubDeptMap = data.deptMap;
-          syncTradeOptions();
-          alert(data.message);
-        } else {
-          alert("Error: " + data.message);
-        }
-      } catch (e) {
-        alert("Network Error!");
-      }
-    }
-
-    // ----------------------------------------------------
-    // SUPER ADMIN: MANAGE ADMINS / SUPERVISORS / HEADS
-    // ----------------------------------------------------
-    function renderActiveAdminsList() {
-      const box = document.getElementById('activeAdminsListBox');
-      if (!box) return;
-      if (!activeAdminsList || activeAdminsList.length === 0) {
-        box.innerHTML = `<p class="text-slate-400 text-center py-1">Koi registered admin/head nahi mila.</p>`;
-        return;
-      }
-
-      box.innerHTML = "";
-      activeAdminsList.forEach(adm => {
-        const roleLabel = adm.role === "SUPER_ADMIN" ? "SUPER ADMIN" : (adm.role === "SECTION_HEAD" ? "HEAD" : "ADMIN/SUP");
-        const badgeColor = adm.role === "SUPER_ADMIN" ? "text-cyan-300 border-cyan-700 bg-cyan-950" : "text-emerald-300 border-emerald-800 bg-emerald-950";
-
-        const card = document.createElement('div');
-        card.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-2 rounded-xl gap-2";
-        card.innerHTML = `
-          <div class="flex-1">
-            <div class="flex items-center gap-1.5">
-              <span class="font-bold text-white">${adm.name}</span>
-              <span class="text-[9px] px-1.5 py-0.5 rounded border ${badgeColor}">${roleLabel}</span>
-            </div>
-            <div class="text-[10px] text-slate-400">${adm.designation || "Staff"} • PIN: <span class="text-amber-300 font-bold">${adm.pin}</span></div>
-          </div>
-          <div class="flex gap-1">
-            <button onclick="openEditAdminBox('${adm.id}')" title="Edit Name / PIN" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-300 rounded text-[10px] font-bold">
-              ✏️
-            </button>
-            ${adm.id !== "ADM-01" ? `
-              <button onclick="deleteAdminUserFromSheet('${adm.id}', '${adm.name.replace(/'/g, "\\'")}')" title="Delete Access" class="px-2 py-1 bg-rose-950 hover:bg-rose-800 border border-rose-800 text-rose-300 rounded text-[10px] font-bold">
-                🗑️
-              </button>
-            ` : ""}
-          </div>
-        `;
-        box.appendChild(card);
-      });
-    }
-
-    function openEditAdminBox(adminId) {
-      const adm = activeAdminsList.find(a => a.id === adminId);
-      if (!adm) return;
-      document.getElementById('editAdmId').value = adm.id;
-      document.getElementById('editAdmName').value = adm.name;
-      document.getElementById('editAdmDesig').value = adm.designation;
-      document.getElementById('editAdmPin').value = adm.pin;
-      document.getElementById('editAdmRole').value = adm.role;
-      document.getElementById('editAdminModal').classList.remove('hidden');
-    }
-
-    function closeEditAdminBox() {
-      document.getElementById('editAdminModal').classList.add('hidden');
-    }
-
-    async function saveEditedAdminUser() {
-      const targetId = document.getElementById('editAdmId').value;
-      const newName = document.getElementById('editAdmName').value.trim();
-      const newDesig = document.getElementById('editAdmDesig').value.trim();
-      const newPin = document.getElementById('editAdmPin').value.trim();
-      const newRole = document.getElementById('editAdmRole').value;
-      const status = document.getElementById('addAdmStatus');
-
-      if (!newName || newPin.length < 4) {
-        alert("Name aur 4-digit PIN compulsory hain!");
-        return;
-      }
-
-      status.classList.remove('hidden');
-      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
-      status.innerText = "Updating user details...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "UPDATE_ADMIN_USER",
-            pin: authenticatedPin,
-            targetAdminId: targetId,
-            admName: newName,
-            admDesig: newDesig,
-            admPin: newPin,
-            admRole: newRole
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          activeAdminsList = data.adminsList || [];
-          renderActiveAdminsList();
-          closeEditAdminBox();
-          if (targetId === "ADM-01") {
-            authenticatedPin = newPin;
-            document.getElementById('welcomeAdminName').innerText = newName;
-          }
-          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
-          status.innerText = "✔ " + data.message;
-        } else {
-          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-        status.innerText = "Network Error!";
-      }
-    }
-
-    async function deleteAdminUserFromSheet(targetId, targetName) {
-      if (!confirm(`Kya aap sach me "${targetName}" ka Admin/Supervisor/Head access delete karna chahte hain?`)) return;
-
-      const status = document.getElementById('addAdmStatus');
-      status.classList.remove('hidden');
-      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
-      status.innerText = "Deleting user access...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "DELETE_ADMIN_USER",
-            pin: authenticatedPin,
-            targetAdminId: targetId
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          activeAdminsList = data.adminsList || [];
-          renderActiveAdminsList();
-          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
-          status.innerText = "✔ " + data.message;
-        } else {
-          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-        status.innerText = "Network Error!";
-      }
-    }
-
-    async function submitNewAdminUser() {
-      const name = document.getElementById('newAdmName').value.trim();
-      const desig = document.getElementById('newAdmDesig').value.trim();
-      const pin = document.getElementById('newAdmPin').value.trim();
-      const role = document.getElementById('newAdmRole').value;
-      const status = document.getElementById('addAdmStatus');
-      const btn = document.getElementById('addAdmBtn');
-
-      if (!name || pin.length < 4) {
-        alert("Name aur 4-digit PIN compulsory hain!");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Registering...";
-      status.classList.remove('hidden');
-      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "ADD_ADMIN_USER",
-            pin: authenticatedPin,
-            admName: name,
-            admDesig: desig,
-            admPin: pin,
-            admRole: role
-          })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          activeAdminsList = data.adminsList || [];
-          renderActiveAdminsList();
-          status.className = "mt-2 text-[11px] text-center font-mono text-cyan-400";
-          status.innerText = "✔ " + data.message;
-          document.getElementById('newAdmName').value = "";
-          document.getElementById('newAdmDesig').value = "";
-          document.getElementById('newAdmPin').value = "";
-        } else {
-          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (err) {
-        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Authorize & Create PIN";
-      }
-    }
-
-    // ----------------------------------------------------
-    // LEAVES, HOLIDAYS, LOCATIONS & SHIFTS
-    // ----------------------------------------------------
-    function renderPendingLeaves() {
-      const box = document.getElementById('pendingLeavesContainer');
-      const badge = document.getElementById('pendingLeaveCountBadge');
-      badge.innerText = `${pendingLeaves.length} Pending`;
-
-      if (!pendingLeaves || pendingLeaves.length === 0) {
-        box.innerHTML = `<p class="text-[11px] text-slate-400 font-mono text-center py-2">Koi pending leave/CPL request nahi hai.</p>`;
-        return;
-      }
-
-      box.innerHTML = "";
-      pendingLeaves.forEach(lv => {
-        const card = document.createElement('div');
-        card.className = "bg-slate-900 border border-slate-800 rounded-xl p-2.5 space-y-1.5";
-        card.innerHTML = `
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-white">${lv.empName} <span class="text-slate-400 font-mono text-[10px]">(${lv.empId})</span></span>
-            <span class="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-800">${lv.leaveType}</span>
-          </div>
-          <div class="text-[11px] text-slate-300 font-mono">
-            📅 ${lv.fromDate} to ${lv.toDate} (${lv.duration})
-          </div>
-          ${lv.reason ? `<div class="text-[10px] text-slate-400 italic">"${lv.reason}"</div>` : ""}
-          <div class="grid grid-cols-2 gap-1.5 pt-1">
-            <button onclick="processLeaveAction('${lv.leaveId}', 'APPROVED')" class="py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px] transition">
-              ✅ Approve
-            </button>
-            <button onclick="processLeaveAction('${lv.leaveId}', 'REJECTED')" class="py-1.5 bg-rose-900 hover:bg-rose-700 text-rose-100 font-bold rounded-lg text-[11px] transition">
-              ❌ Reject
-            </button>
-          </div>
-        `;
-        box.appendChild(card);
-      });
-    }
-
-    async function processLeaveAction(leaveId, decision) {
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "PROCESS_LEAVE",
-            pin: authenticatedPin,
-            leaveId: leaveId,
-            decision: decision
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          pendingLeaves = data.pendingLeaves || [];
-          renderPendingLeaves();
-          alert(data.message);
-        } else {
-          alert("Error: " + data.message);
-        }
-      } catch (e) {
-        alert("Network Error!");
-      }
-    }
-
-    function renderHolidaysList() {
-      const box = document.getElementById('adminHolidaysList');
-      if (!box) return;
-      if (!savedHolidays || savedHolidays.length === 0) {
-        box.innerHTML = `<p class="text-slate-400 text-center py-1">Abhi koi official holiday added nahi hai.</p>`;
-        return;
-      }
-      box.innerHTML = "";
-      savedHolidays.forEach(h => {
-        const row = document.createElement('div');
-        row.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg";
-        row.innerHTML = `
-          <span><b class="text-amber-300">${h.date}</b> — ${h.title}</span>
-          <button onclick="deleteHolidayFromSheet('${h.date}')" class="px-2 py-0.5 bg-rose-950 hover:bg-rose-800 border border-rose-800 text-rose-300 rounded text-[10px]">🗑️</button>
-        `;
-        box.appendChild(row);
-      });
-    }
-
-    async function addHolidayToSheet() {
-      const holDate = document.getElementById('newHolDate').value;
-      const holName = document.getElementById('newHolName').value.trim();
-      const status = document.getElementById('holStatus');
-      const btn = document.getElementById('saveHolBtn');
-
-      if (!holDate || !holName) {
-        alert("Holiday Date aur Name dono enter karein!");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Adding Holiday...";
-      status.classList.remove('hidden');
-      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
-      status.innerText = "Saving to Holidays tab...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "ADD_HOLIDAY",
-            pin: authenticatedPin,
-            holDate: holDate,
-            holName: holName
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          savedHolidays = data.holidays || [];
-          renderHolidaysList();
-          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
-          status.innerText = "✔ " + data.message;
-          document.getElementById('newHolName').value = "";
-        } else {
-          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "➕ Add Official Holiday";
-      }
-    }
-
-    async function deleteHolidayFromSheet(holDate) {
-      if (!confirm(`Kya aap ${holDate} ki holiday delete karna chahte hain?`)) return;
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "DELETE_HOLIDAY",
-            pin: authenticatedPin,
-            holDate: holDate
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          savedHolidays = data.holidays || [];
-          renderHolidaysList();
-        }
-      } catch (e) {
-        alert("Network Error!");
-      }
-    }
-
-    function renderShiftsList() {
-      const box = document.getElementById('activeShiftsList');
-      if (!box) return;
-      box.innerHTML = "";
-      savedShifts.forEach(s => {
-        const hh = String(s.startHour).padStart(2, '0');
-        const mm = String(s.startMin).padStart(2, '0');
-        const safeName = s.name.replace(/'/g, "\\'");
-        const row = document.createElement('div');
-        row.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg gap-2";
-        row.innerHTML = `
-          <div class="flex-1">
-            <span class="text-purple-300 font-bold block">${s.label}</span>
-            <span class="text-slate-400 text-[10px]">Start: ${hh}:${mm} | Grace: ${s.graceMins}m | ${s.dutyHours}h</span>
-          </div>
-          <button onclick="deleteShiftFromSheet('${safeName}')" title="Delete Shift" class="px-2 py-1 bg-rose-950/80 hover:bg-rose-800 border border-rose-800 text-rose-300 rounded text-[10px] font-bold transition">
-            🗑️
-          </button>
-        `;
-        box.appendChild(row);
-      });
-    }
-
-    async function deleteShiftFromSheet(shiftName) {
-      if (!confirm(`Kya aap sach me "${shiftName}" shift ko delete karna chahte hain?`)) return;
-      const status = document.getElementById('saveShiftStatus');
-      status.classList.remove('hidden');
-      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
-      status.innerText = `Deleting shift ${shiftName}...`;
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "DELETE_SHIFT",
-            pin: authenticatedPin,
-            shiftName: shiftName
-          })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          if (data.shifts) savedShifts = data.shifts;
-          renderShiftsList();
-          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
-          status.innerText = "✔ " + data.message;
-        } else {
-          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-        status.innerText = "Network Error!";
-      }
-    }
-
-    async function saveShiftToSheet() {
-      const shiftName = document.getElementById('newShiftName').value.trim();
-      const shiftLabel = document.getElementById('newShiftLabel').value.trim();
-      const timeVal = document.getElementById('newShiftTime').value;
-      const graceMins = document.getElementById('newShiftGrace').value;
-      const dutyHours = document.getElementById('newShiftHours').value;
-      const status = document.getElementById('saveShiftStatus');
-      const btn = document.getElementById('saveShiftBtn');
-
-      if (!shiftName || !shiftLabel || !timeVal) {
-        alert("Shift Code, Display Label aur Start Time zaroori hain!");
-        return;
-      }
-
-      const [startHour, startMin] = timeVal.split(':').map(Number);
-
-      btn.disabled = true;
-      btn.innerText = "Saving Shift...";
-      status.classList.remove('hidden');
-      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
-      status.innerText = "Sheet me shift update ho rahi hai...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "ADD_SHIFT",
-            pin: authenticatedPin,
-            shiftName: shiftName,
-            shiftLabel: shiftLabel,
-            startHour: startHour,
-            startMin: startMin,
-            graceMins: graceMins,
-            dutyHours: dutyHours
-          })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          if (data.shifts) savedShifts = data.shifts;
-          renderShiftsList();
-          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
-          status.innerText = "✔ " + data.message;
-          document.getElementById('newShiftName').value = "";
-          document.getElementById('newShiftLabel').value = "";
-        } else {
-          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Save / Update Shift Timing";
-      }
-    }
-
-    function populateLocationsDropdown() {
-      const sel = document.getElementById('qrLocationSelect');
-      sel.innerHTML = "";
-      savedLocations.forEach((loc, index) => {
-        const opt = document.createElement('option');
-        opt.value = index;
-        opt.textContent = `${loc.name} (${loc.qrSecret})`;
-        sel.appendChild(opt);
-      });
-      renderSelectedLocationQr();
-    }
-
-    async function deleteSelectedLocation() {
-      const sel = document.getElementById('qrLocationSelect');
-      const loc = savedLocations[sel.value];
-      if (!loc) return;
-
-      if (!confirm(`Kya aap sach me "${loc.name}" (${loc.qrSecret}) location ko delete karna chahte hain?`)) return;
-
-      const status = document.getElementById('saveLocStatus');
-      status.classList.remove('hidden');
-      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
-      status.innerText = `Deleting ${loc.name}...`;
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "DELETE_LOCATION",
-            pin: authenticatedPin,
-            qrSecret: loc.qrSecret
-          })
+          body: JSON.stringify({ action: "GET_PORTAL_CONFIG" })
         });
         const data = await res.json();
 
         if (data.status === "success") {
           if (data.locations && data.locations.length > 0) {
-            savedLocations = data.locations;
-          } else {
-            savedLocations.splice(sel.value, 1);
-          }
-          populateLocationsDropdown();
-          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
-          status.innerText = "✔ " + data.message;
-        } else {
-          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-        status.innerText = "Network Error!";
-      }
-    }
-
-    function renderSelectedLocationQr() {
-      const sel = document.getElementById('qrLocationSelect');
-      const loc = savedLocations[sel.value] || savedLocations[0];
-      if (!loc) return;
-
-      document.getElementById('posterLocName').innerText = loc.name;
-      document.getElementById('posterQrSecret').innerText = loc.qrSecret;
-      document.getElementById('posterCoords').innerText = `GPS: ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)} • Radius: ${loc.radius}m`;
-
-      const container = document.getElementById('qrCanvasContainer');
-      container.innerHTML = "";
-      new QRCode(container, {
-        text: loc.qrSecret,
-        width: 180,
-        height: 180,
-        colorDark: "#020617",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
-    }
-
-    function openEditLocationBox() {
-      const sel = document.getElementById('qrLocationSelect');
-      const loc = savedLocations[sel.value];
-      if (!loc) return;
-
-      document.getElementById('editLocId').value = loc.id || "";
-      document.getElementById('editLocOldSecret').value = loc.qrSecret || "";
-      document.getElementById('editLocName').value = loc.name || "";
-      document.getElementById('editLocSecret').value = loc.qrSecret || "";
-      document.getElementById('editLocLat').value = loc.lat || "";
-      document.getElementById('editLocLng').value = loc.lng || "";
-      document.getElementById('editLocRadius').value = loc.radius || 150;
-
-      document.getElementById('editLocationModal').classList.remove('hidden');
-    }
-
-    function closeEditLocationBox() {
-      document.getElementById('editLocationModal').classList.add('hidden');
-    }
-
-    function fillLiveGpsForEditLocation() {
-      if (!navigator.geolocation) {
-        alert("GPS supported nahi hai!");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          document.getElementById('editLocLat').value = pos.coords.latitude.toFixed(6);
-          document.getElementById('editLocLng').value = pos.coords.longitude.toFixed(6);
-        },
-        err => {
-          alert("GPS Error: Location permission allow karein.");
-        },
-        { enableHighAccuracy: true }
-      );
-    }
-
-    async function saveEditedLocationToSheet() {
-      const sel = document.getElementById('qrLocationSelect');
-      const currentIndex = sel.value;
-      const locId = document.getElementById('editLocId').value;
-      const oldSecret = document.getElementById('editLocOldSecret').value;
-      const newName = document.getElementById('editLocName').value.trim();
-      const newSecret = document.getElementById('editLocSecret').value.trim().toUpperCase();
-      const newLat = document.getElementById('editLocLat').value.trim();
-      const newLng = document.getElementById('editLocLng').value.trim();
-      const newRadius = document.getElementById('editLocRadius').value.trim() || 150;
-
-      const status = document.getElementById('saveLocStatus');
-      const btn = document.getElementById('updateLocBtn');
-
-      if (!newName || !newSecret || !newLat || !newLng) {
-        alert("Saari details (Name, QR Secret, Latitude, Longitude) bharni zaroori hain!");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Updating Location & QR...";
-      status.classList.remove('hidden');
-      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
-      status.innerText = "Sheet me changes save ho rahe hain...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "UPDATE_LOCATION",
-            pin: authenticatedPin,
-            locId: locId,
-            oldSecret: oldSecret,
-            locName: newName,
-            qrSecret: newSecret,
-            locLat: newLat,
-            locLng: newLng,
-            locRadius: newRadius
-          })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          if (data.locations && data.locations.length > 0) {
-            savedLocations = data.locations;
-          }
-          populateLocationsDropdown();
-          if (savedLocations[currentIndex]) {
-            document.getElementById('qrLocationSelect').value = currentIndex;
-          }
-          renderSelectedLocationQr();
-          closeEditLocationBox();
-
-          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
-          status.innerText = "✔ " + data.message;
-        } else {
-          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "✔ Update Location & Regenerate QR";
-      }
-    }
-
-    function toggleNewLocForm() {
-      const form = document.getElementById('newLocationForm');
-      const arrow = document.getElementById('locToggleArrow');
-      if (form.classList.contains('hidden')) {
-        form.classList.remove('hidden');
-        arrow.innerText = "▲";
-      } else {
-        form.classList.add('hidden');
-        arrow.innerText = "▼";
-      }
-    }
-
-    function fillCurrentGpsForLocation() {
-      if (!navigator.geolocation) {
-        alert("GPS supported nahi hai!");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          document.getElementById('newLocLat').value = pos.coords.latitude.toFixed(6);
-          document.getElementById('newLocLng').value = pos.coords.longitude.toFixed(6);
-        },
-        err => {
-          alert("GPS Error: Location permission allow karein.");
-        },
-        { enableHighAccuracy: true }
-      );
-    }
-
-    async function saveNewLocationToSheet() {
-      const name = document.getElementById('newLocName').value.trim();
-      const lat = document.getElementById('newLocLat').value.trim();
-      const lng = document.getElementById('newLocLng').value.trim();
-      const radius = document.getElementById('newLocRadius').value.trim() || 150;
-      const customSecret = document.getElementById('newLocSecret').value.trim();
-      const status = document.getElementById('saveLocStatus');
-      const btn = document.getElementById('saveLocBtn');
-
-      if (!name || !lat || !lng) {
-        alert("Location Name aur GPS Coordinates (Lat/Lng) zaroori hain!");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Saving Location...";
-      status.classList.remove('hidden');
-      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
-      status.innerText = "Sheet me location save ho rahi hai...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "ADD_LOCATION",
-            pin: authenticatedPin,
-            locName: name,
-            locLat: lat,
-            locLng: lng,
-            locRadius: radius,
-            customSecret: customSecret
-          })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          if (data.locations && data.locations.length > 0) {
-            savedLocations = data.locations;
-          }
-          populateLocationsDropdown();
-          document.getElementById('qrLocationSelect').value = savedLocations.length - 1;
-          renderSelectedLocationQr();
-
-          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
-          status.innerText = "✔ " + data.message;
-          document.getElementById('newLocName').value = "";
-          document.getElementById('newLocSecret').value = "";
-        } else {
-          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Save Location & Generate QR";
-      }
-    }
-
-    function printOfficialQrPoster() {
-      const sel = document.getElementById('qrLocationSelect');
-      const loc = savedLocations[sel.value] || savedLocations[0];
-      const qrImg = document.querySelector('#qrCanvasContainer img') || document.querySelector('#qrCanvasContainer canvas');
-      if (!qrImg) return;
-
-      const imgSrc = qrImg.src || qrImg.toDataURL("image/png");
-      const win = window.open('', '_blank');
-      win.document.write(`
-        <html>
-        <head>
-          <title>CGC QR Poster - ${loc.name}</title>
-          <style>
-            body { font-family: Arial, sans-serif; text-align: center; padding: 30px; }
-            .poster { border: 6px solid #0f172a; border-radius: 20px; padding: 35px; max-width: 520px; margin: 0 auto; }
-            .uni { font-size: 16px; font-weight: 900; letter-spacing: 2px; color: #334155; }
-            .dept { font-size: 14px; font-weight: bold; color: #059669; margin-top: 6px; text-transform: uppercase; }
-            .loc { font-size: 34px; font-weight: 900; color: #020617; margin: 18px 0 10px 0; text-transform: uppercase; }
-            .qr-box { margin: 25px auto; display: inline-block; padding: 15px; border: 3px dashed #64748b; border-radius: 16px; }
-            .secret { font-family: monospace; font-size: 15px; font-weight: bold; background: #f1f5f9; padding: 6px 14px; border-radius: 6px; display: inline-block; margin-top: 10px; }
-            .inst { font-size: 14px; color: #1e293b; margin-top: 20px; line-height: 1.6; font-weight: bold; }
-            .footer { font-size: 11px; color: #64748b; margin-top: 25px; border-top: 1px solid #cbd5e1; padding-top: 10px; font-family: monospace; }
-          </style>
-        </head>
-        <body onload="window.print()">
-          <div class="poster">
-            <div class="uni">CHANDIGARH GROUP OF COLLEGES</div>
-            <div class="dept">Department of Maintenance Services</div>
-            <div class="loc">📍 ${loc.name}</div>
-            <div class="qr-box">
-              <img src="${imgSrc}" width="280" height="280" />
-            </div>
-            <br/>
-            <div class="secret">${loc.qrSecret}</div>
-            <div class="inst">
-              1. Open CGC Workforce Attendance App<br/>
-              2. Enter Employee ID & Scan QR Code<br/>
-              3. Verify Live Front Camera Selfie (${loc.radius}m Geofence Active)
-            </div>
-            <div class="footer">Digital Workforce Attendance System • Managed by Sandeep Singh (J-5383)</div>
-          </div>
-        </body>
-        </html>
-      `);
-      win.document.close();
-    }
-
-    function downloadQrPosterPng() {
-      const sel = document.getElementById('qrLocationSelect');
-      const loc = savedLocations[sel.value] || savedLocations[0];
-      const qrCanvas = document.querySelector('#qrCanvasContainer canvas');
-      const qrImg = document.querySelector('#qrCanvasContainer img');
-
-      const outCanvas = document.createElement('canvas');
-      outCanvas.width = 600;
-      outCanvas.height = 760;
-      const ctx = outCanvas.getContext('2d');
-
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, 600, 760);
-
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 12;
-      ctx.strokeRect(24, 24, 552, 712);
-
-      ctx.fillStyle = "#334155";
-      ctx.font = "bold 18px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("CHANDIGARH GROUP OF COLLEGES", 300, 80);
-
-      ctx.fillStyle = "#059669";
-      ctx.font = "bold 15px Arial";
-      ctx.fillText("DEPARTMENT OF MAINTENANCE SERVICES", 300, 110);
-
-      ctx.fillStyle = "#020617";
-      ctx.font = "900 34px Arial";
-      ctx.fillText(loc.name.toUpperCase(), 300, 165);
-
-      const drawAndSave = (imgSource) => {
-        ctx.drawImage(imgSource, 150, 200, 300, 300);
-
-        ctx.fillStyle = "#0f172a";
-        ctx.font = "bold 16px monospace";
-        ctx.fillText(loc.qrSecret, 300, 545);
-
-        ctx.fillStyle = "#334155";
-        ctx.font = "bold 14px Arial";
-        ctx.fillText(`Geofence Radius: ${loc.radius}m | Live Selfie Required`, 300, 595);
-        ctx.fillText("Scan via Official CGC Workforce Attendance App", 300, 625);
-
-        ctx.fillStyle = "#64748b";
-        ctx.font = "12px monospace";
-        ctx.fillText("System Architect: Sandeep Singh (J-5383)", 300, 700);
-
-        const link = document.createElement('a');
-        link.download = `CGC_QR_${loc.name.replace(/\s+/g, '_')}.png`;
-        link.href = outCanvas.toDataURL("image/png");
-        link.click();
-      };
-
-      if (qrCanvas) {
-        drawAndSave(qrCanvas);
-      } else if (qrImg) {
-        const tempImg = new Image();
-        tempImg.crossOrigin = "anonymous";
-        tempImg.onload = () => drawAndSave(tempImg);
-        tempImg.src = qrImg.src;
-      }
-    }
-
-    async function unlockAdmin() {
-      const pin = document.getElementById('pinInput').value.trim();
-      const errBox = document.getElementById('loginError');
-      const btn = document.getElementById('loginBtn');
-
-      if (!pin) {
-        alert("PIN enter karein!");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Authenticating...";
-      errBox.classList.add('hidden');
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "VERIFY_LOGIN", pin: pin })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          authenticatedPin = pin;
-          currentAdminRole = data.adminRole;
-
-          if (data.locations && data.locations.length > 0) savedLocations = data.locations;
-          if (data.shifts && data.shifts.length > 0) savedShifts = data.shifts;
-          if (data.deptMap) deptSubDeptMap = data.deptMap;
-          savedHolidays = data.holidays || [];
-          pendingLeaves = data.pendingLeaves || [];
-          activeAdminsList = data.adminsList || [];
-          allEmployeesList = data.employeesList || [];
-
-          renderDeptDropdowns();
-          filterStaffDirectory();
-          populateLocationsDropdown();
-          renderShiftsList();
-          renderHolidaysList();
-          renderPendingLeaves();
-          renderActiveAdminsList();
-
-          document.getElementById('welcomeAdminName').innerText = data.adminName;
-          const badge = document.getElementById('roleBadge');
-          const viewBadge = document.getElementById('viewModeBadge');
-          const sheetLink = document.getElementById('sheetLinkTag');
-          const sheetText = document.getElementById('sheetLinkText');
-          const driveLink = document.getElementById('driveLinkTag');
-          const driveText = document.getElementById('driveLinkText');
-
-          const currentMobStatus = data.mobileStatus || "ON";
-          const indicator = document.getElementById('statusIndicator');
-          if (currentMobStatus === "ON") {
-            indicator.innerText = "Status: ON (Active)";
-            indicator.className = "text-xs font-mono font-bold text-emerald-400";
-          } else {
-            indicator.innerText = "Status: OFF (Disabled)";
-            indicator.className = "text-xs font-mono font-bold text-rose-400";
-          }
-
-          if (data.adminRole === "SUPER_ADMIN") {
-            badge.innerText = "Super Admin";
-            badge.className = "text-[10px] tracking-widest uppercase bg-cyan-950 text-cyan-400 px-2.5 py-0.5 rounded-full border border-cyan-800 font-mono font-bold";
-            document.getElementById('superAdminSection').classList.remove('hidden');
-            document.getElementById('superAdminQrSection').classList.remove('hidden');
-            document.getElementById('superAdminShiftSection').classList.remove('hidden');
-            document.getElementById('superAdminHolidaySection').classList.remove('hidden');
-
-            viewBadge.innerText = "Full Master DB";
-            viewBadge.className = "text-[10px] text-cyan-400 font-mono font-bold";
-            sheetLink.href = MASTER_SHEET_URL;
-            sheetText.innerText = "Open Master DB (Full Settings & Admins)";
-            driveLink.href = MASTER_DRIVE_URL;
-            driveText.innerText = "Open Master Photos Folder";
-          } else {
-            badge.innerText = data.designation || "Admin / Head";
-            badge.className = "text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold";
-            document.getElementById('superAdminSection').classList.add('hidden');
-            document.getElementById('superAdminQrSection').classList.add('hidden');
-            document.getElementById('superAdminShiftSection').classList.add('hidden');
-            document.getElementById('superAdminHolidaySection').classList.remove('hidden');
-
-            viewBadge.innerText = "Public Safe View";
-            viewBadge.className = "text-[10px] text-emerald-400 font-mono";
-            sheetLink.href = PUBLIC_SHEET_URL;
-            sheetText.innerText = "Open Attendance Sheet (Public View)";
-            driveLink.href = PUBLIC_DRIVE_URL;
-            driveText.innerText = "Open Verified Photos (Public View)";
-          }
-
-          document.getElementById('loginBox').classList.add('hidden');
-          document.getElementById('dashboardBox').classList.remove('hidden');
-        } else {
-          errBox.innerText = data.message;
-          errBox.classList.remove('hidden');
-        }
-      } catch (e) {
-        errBox.innerText = "Network Error! Connection verify karein.";
-        errBox.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "UNLOCK CONSOLE";
-      }
-    }
-
-    function logoutAdmin() {
-      authenticatedPin = "";
-      currentAdminRole = "";
-      document.getElementById('pinInput').value = "";
-      document.getElementById('dashboardBox').classList.add('hidden');
-      document.getElementById('loginBox').classList.remove('hidden');
-    }
-
-    async function submitNewEmployee() {
-      const empId = document.getElementById('addEmpId').value.trim().toUpperCase();
-      const name = document.getElementById('addEmpName').value.trim();
-      const dept = document.getElementById('addEmpDept').value;
-      const trade = document.getElementById('addEmpTradeSelect').value;
-
-      const status = document.getElementById('addEmpStatus');
-      const btn = document.getElementById('addEmpBtn');
-
-      if (!empId || !name || !dept || !trade) {
-        alert("Emp ID, Name, Department aur Sub-Department compulsory hain!");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Saving to Database...";
-      status.classList.remove('hidden');
-      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
-      status.innerText = "Sheet me entry likhi ja rahi hai...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "ADD_EMPLOYEE",
-            pin: authenticatedPin,
-            newEmpId: empId,
-            newName: name,
-            newDept: dept,
-            newTrade: trade
-          })
-        });
-
-        const data = await res.json();
-
-        if (data.status === "success") {
-          allEmployeesList.push({ id: empId, name: name, dept: dept, trade: trade });
-          populateStaffDeptFilter();
-          filterStaffDirectory();
-
-          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
-          status.innerText = "✔ " + data.message;
-          document.getElementById('addEmpId').value = "";
-          document.getElementById('addEmpName').value = "";
-        } else {
-          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (err) {
-        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "➕ Save Employee to Database";
-      }
-    }
-
-    async function deleteEmployeeFromSheet() {
-      const delId = document.getElementById('delEmpIdInput').value.trim().toUpperCase();
-      const status = document.getElementById('delEmpStatus');
-      const btn = document.getElementById('delEmpBtn');
-
-      if (!delId) {
-        alert("Delete karne ke liye Employee ID enter karein!");
-        return;
-      }
-
-      if (!confirm(`Kya aap sach me Employee ID "${delId}" ko database se delete karna chahte hain?`)) return;
-
-      btn.disabled = true;
-      btn.innerText = "Removing...";
-      status.classList.remove('hidden');
-      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
-      status.innerText = `Removing ${delId} from Sheet...`;
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "DELETE_EMPLOYEE",
-            pin: authenticatedPin,
-            delEmpId: delId
-          })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          const cleanDel = delId.replace(/[^A-Z0-9]/g, "");
-          allEmployeesList = allEmployeesList.filter(e => e.id.replace(/[^A-Z0-9]/g, "") !== cleanDel);
-          populateStaffDeptFilter();
-          filterStaffDirectory();
-
-          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
-          status.innerText = "✔ " + data.message;
-          document.getElementById('delEmpIdInput').value = "";
-        } else {
-          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (err) {
-        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "🗑️ Remove";
-      }
-    }
-
-    async function updateAdminPin() {
-      const newPin = document.getElementById('newPinVal').value.trim();
-      const status = document.getElementById('pinChangeStatus');
-      if (!newPin || newPin.length < 4) {
-        alert("Naya PIN kam se kam 4 digit ka daalein!");
-        return;
-      }
-
-      status.classList.remove('hidden');
-      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
-      status.innerText = "PIN update ho raha hai...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "CHANGE_PIN", pin: authenticatedPin, newPin: newPin })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          authenticatedPin = newPin;
-          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
-          status.innerText = "✔ " + data.message;
-          document.getElementById('newPinVal').value = "";
-        } else {
-          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-          status.innerText = "✖ " + data.message;
-        }
-      } catch (e) {
-        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-        status.innerText = "Network Error!";
-      }
-    }
-
-    async function setMobilePermission(target) {
-      const indicator = document.getElementById('statusIndicator');
-      indicator.innerText = "Updating...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "ADMIN_SWITCH", pin: authenticatedPin, targetStatus: target })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          if (target === "ON") {
-            indicator.innerText = "Status: ON (Active)";
-            indicator.className = "text-xs font-mono font-bold text-emerald-400";
-          } else {
-            indicator.innerText = "Status: OFF (Disabled)";
-            indicator.className = "text-xs font-mono font-bold text-rose-400";
-          }
-          alert(data.message);
-        } else {
-          alert("Error: " + data.message);
-        }
-      } catch (err) {
-        alert("Network Error!");
-      }
-    }
-
-    async function generateMissingStaffWhatsAppAlert() {
-      const btn = document.getElementById('alertBtn');
-      const status = document.getElementById('missingAlertStatus');
-
-      btn.disabled = true;
-      btn.innerHTML = `<span>⏳</span> Scanning Attendance...`;
-      status.classList.remove('hidden');
-      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
-      status.innerText = "Checking unpunched plant & maintenance staff...";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "GET_MISSING_ALERTS", pin: authenticatedPin })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          if (data.missingCount === 0) {
-            status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
-            status.innerText = "✔ All registered staff are present on duty!";
-          } else {
-            status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-            status.innerText = `${data.missingCount} staff members absent. Opening WhatsApp...`;
-
-            let msg = `🚨 *CGC MAINTENANCE - ABSENCE / LATE ALERT*\n`;
-            msg += `⏰ *Alert Time:* ${data.currentTime}\n`;
-            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-            msg += `⚠️ *Total Unpunched Staff:* ${data.missingCount}\n\n`;
-            
-            data.missingStaff.slice(0, 15).forEach((m, idx) => {
-              msg += `${idx + 1}. *${m.name}* (${m.trade}) - ID: ${m.id}\n`;
+            locSel.innerHTML = "";
+            data.locations.forEach(loc => {
+              const opt = document.createElement('option');
+              opt.value = loc.qrSecret;
+              opt.textContent = `${loc.name} (${loc.qrSecret})`;
+              locSel.appendChild(opt);
             });
-
-            if (data.missingStaff.length > 15) {
-              msg += `_...aur ${data.missingStaff.length - 15} log baki hain._\n`;
-            }
-
-            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-            msg += `*Action Required:* Kripya plant room backups assign karein.\n`;
-            msg += `_Reported via Admin Console_`;
-
-            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-            window.open(whatsappUrl, '_blank');
           }
-        } else {
-          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-          status.innerText = "Error: " + data.message;
+
+          if (data.shifts && data.shifts.length > 0) {
+            shiftSel.innerHTML = "";
+            data.shifts.forEach(s => {
+              const opt = document.createElement('option');
+              opt.value = s.name;
+              opt.textContent = s.label;
+              shiftSel.appendChild(opt);
+            });
+          }
+
+          const locCount = (data.locations && data.locations.length) || 4;
+          badge.innerText = `✔ ${locCount} Locations & Shifts Synced`;
         }
-      } catch (err) {
-        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span>⚠️</span> SCAN & BROADCAST MISSING STAFF`;
+      } catch (e) {
+        badge.innerText = "Default Config";
       }
     }
 
-    async function shareLiveReportToWhatsApp() {
-      const btn = document.getElementById('broadcastBtn');
-      const status = document.getElementById('broadcastStatus');
+    window.addEventListener("DOMContentLoaded", loadLiveConfig);
 
-      btn.disabled = true;
-      btn.innerHTML = `<span>⏳</span> Fetching Sheet Stats...`;
-      status.classList.remove('hidden');
-      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "GET_STATS", pin: authenticatedPin })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
-          status.innerText = "Stats synced! Opening WhatsApp...";
-
-          let msg = `📊 *CGC WORKFORCE ATTENDANCE REPORT*\n`;
-          msg += `📅 *Date:* ${data.date}\n`;
-          msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-          msg += `👥 *Total Staff:* ${data.totalStaff}\n`;
-          msg += `✅ *Total Present Today:* ${data.present}\n`;
-          msg += `❌ *Absent:* ${data.absent}\n`;
-          msg += `🟢 *On-Duty Punches:* ${data.onDutyPunches}\n`;
-          msg += `🔴 *Off-Duty Punches:* ${data.offDutyPunches}\n`;
-          msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-          msg += `👨‍💼 *Report Generated By:* ${data.generatedBy}\n`;
-          msg += `_System Architect & Super Admin: Sandeep Singh (J-5383)_`;
-
-          const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-          window.open(whatsappUrl, '_blank');
-        } else {
-          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-          status.innerText = "Error: " + data.message;
-        }
-      } catch (err) {
-        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span>📲</span> SHARE TODAY'S REPORT TO GROUP`;
+    function showStatus(msg, type) {
+      const box = document.getElementById('statusBox');
+      box.classList.remove('hidden');
+      if (type === "loading") {
+        box.className = "mt-4 p-3 rounded-xl border border-yellow-700 bg-yellow-950/40 text-yellow-300 text-xs font-mono text-center";
+      } else if (type === "success") {
+        box.className = "mt-4 p-3 rounded-xl border border-emerald-700 bg-emerald-950/50 text-emerald-300 text-xs font-mono text-center";
+      } else {
+        box.className = "mt-4 p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
       }
+      box.innerHTML = msg;
     }
 
-    async function downloadMonthlyReportCSV() {
-      const monthVal = document.getElementById('reportMonthSelect').value;
-      const status = document.getElementById('exportStatus');
-      const btn = document.getElementById('exportBtn');
-
-      if (!monthVal) {
-        alert("Pehle Month select karein!");
+    function startVipQrFlow() {
+      const empId = document.getElementById('empId').value.trim();
+      if (!empId) {
+        alert("Employee ID enter karein!");
         return;
       }
+      refreshGps();
+      document.getElementById('qrBox').classList.remove('hidden');
+      document.getElementById('actionButtons').classList.add('hidden');
+      document.getElementById('statusBox').classList.add('hidden');
+      document.getElementById('whatsappShareBox').classList.add('hidden');
 
-      btn.disabled = true;
-      btn.innerText = "Exporting...";
-      status.classList.remove('hidden');
-      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-2";
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          scannedSecret = decodedText.trim();
+          stopQrScanner();
+          startSelfieCapture();
+        },
+        (err) => {}
+      ).catch(err => {
+        alert("Camera error: " + err);
+        stopQrScanner();
+      });
+    }
+
+    function stopQrScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          document.getElementById('qrBox').classList.add('hidden');
+          document.getElementById('actionButtons').classList.remove('hidden');
+        }).catch(() => {});
+      } else {
+        document.getElementById('qrBox').classList.add('hidden');
+        document.getElementById('actionButtons').classList.remove('hidden');
+      }
+    }
+
+    function startDirectLocationPunch() {
+      const empId = document.getElementById('empId').value.trim();
+      if (!empId) {
+        alert("Employee ID enter karein!");
+        return;
+      }
+      refreshGps();
+      scannedSecret = document.getElementById('directLocationSelect').value;
+      document.getElementById('statusBox').classList.add('hidden');
+      document.getElementById('whatsappShareBox').classList.add('hidden');
+      startSelfieCapture();
+    }
+
+    async function startSelfieCapture() {
+      const camBox = document.getElementById('cameraBox');
+      const video = document.getElementById('video');
+      const countText = document.getElementById('countdownText');
+
+      document.getElementById('actionButtons').classList.add('hidden');
+      camBox.classList.remove('hidden');
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } },
+          audio: false
+        });
+        video.srcObject = stream;
+
+        let count = 3;
+        countText.innerText = `Capturing Selfie in ${count}...`;
+
+        const timer = setInterval(() => {
+          count--;
+          if (count > 0) {
+            countText.innerText = `Capturing Selfie in ${count}...`;
+          } else {
+            clearInterval(timer);
+            countText.innerText = "Saving Smart Time-Slot Punch...";
+
+            const canvas = document.getElementById('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const base64Photo = canvas.toDataURL('image/jpeg', 0.65);
+            lastCapturedPhoto = base64Photo;
+
+            stream.getTracks().forEach(track => track.stop());
+            camBox.classList.add('hidden');
+            submitVipPunch(base64Photo);
+          }
+        }, 1000);
+      } catch (err) {
+        alert("Front camera permission zaroori hai: " + err.message);
+        camBox.classList.add('hidden');
+        document.getElementById('actionButtons').classList.remove('hidden');
+      }
+    }
+
+    async function submitVipPunch(photoData) {
+      const empId = document.getElementById('empId').value.trim().toUpperCase();
+      const dutyType = document.getElementById('dutyType').value;
+      const shift = document.getElementById('shift').value;
+
+      showStatus("⏳ Recording Smart Attendance...", "loading");
 
       try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "GET_MONTHLY_REPORT", pin: authenticatedPin, yearMonth: monthVal })
+          body: JSON.stringify({
+            empId: empId,
+            dutyType: dutyType,
+            shift: shift,
+            punchMode: "QR",
+            scannedQr: scannedSecret,
+            latitude: userLat,
+            longitude: userLng,
+            photo: photoData,
+            randomTimeMode: true
+          })
         });
-        const resp = await res.json();
 
-        if (resp.status === "success") {
-          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-2";
-          status.innerText = "CSV ready! Downloading...";
+        const data = await res.json();
+        document.getElementById('actionButtons').classList.remove('hidden');
 
-          let csvContent = "data:text/csv;charset=utf-8,";
-          csvContent += "Emp ID,Worker Name,Department,Sub-Department,Regular Days,Sunday Duties (OT),Holiday Duties (OT),CPL Taken,Total Approved Leaves,Total Payable Days,Total Duty Hours,Missing Out-Punch Days\r\n";
+        if (data.status === "success") {
+          const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+          const badgeIcon = data.dutyType === "ON-DUTY" ? "🟢" : "🔴";
 
-          resp.data.forEach(row => {
-            csvContent += `"${row.empId}","${row.name}","${row.dept}","${row.trade}",${row.regularDays},${row.sundayDuties},${row.holidayDuties},${row.cplCount},${row.approvedLeaves},${row.totalPayableDays},${row.totalHours},${row.missingOutDays}\r\n`;
-          });
+          lastWhatsAppMessage =
+            `${badgeIcon} *CGC MAINTENANCE ATTENDANCE*\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `👤 *Name:* ${data.name}\n` +
+            `🆔 *Emp ID:* ${empId}\n` +
+            `🛠 *Sub-Dept:* ${data.trade}\n` +
+            `📌 *Duty:* ${data.dutyType} (${shift})\n` +
+            `📍 *Location:* ${data.locationName}\n` +
+            `📅 *Day Type:* ${data.dayCategory}\n` +
+            `🕒 *Time:* ${data.time}\n` +
+            `📆 *Date:* ${todayStr}\n` +
+            `✅ *Status:* ${data.punctuality}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `_Verified via Digital Workforce Portal_`;
 
-          const encodedUri = encodeURI(csvContent);
-          const link = document.createElement("a");
-          link.setAttribute("href", encodedUri);
-          link.setAttribute("download", `CGC_Payroll_Report_${monthVal}.csv`);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          showStatus(
+            `✅ <b>ATTENDANCE MARKED!</b><br>` +
+            `👤 ${data.name} (${data.trade})<br>` +
+            `📍 Location: <b>${data.locationName}</b><br>` +
+            `🕒 Smart Time: <b>${data.time}</b> | <b>${data.punctuality}</b>`,
+            "success"
+          );
 
-          status.innerText = "✔ Monthly payroll sheet downloaded!";
+          document.getElementById('whatsappShareBox').classList.remove('hidden');
         } else {
-          status.className = "text-[11px] text-center font-mono text-rose-400 mt-2";
-          status.innerText = "✖ " + resp.message;
+          showStatus(`❌ ${data.message}`, "error");
         }
       } catch (err) {
-        status.className = "text-[11px] text-center font-mono text-rose-400 mt-2";
-        status.innerText = "Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Export CSV";
+        document.getElementById('actionButtons').classList.remove('hidden');
+        showStatus("❌ Network Error! Internet check karein.", "error");
       }
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      const now = new Date();
-      const yr = now.getFullYear();
-      const mo = String(now.getMonth() + 1).padStart(2, '0');
-      const monthInput = document.getElementById('reportMonthSelect');
-      if (monthInput) monthInput.value = `${yr}-${mo}`;
-      renderDeptDropdowns();
-      populateLocationsDropdown();
-      renderShiftsList();
-    });
+    async function sharePunchWithPhoto() {
+      if (!lastWhatsAppMessage) return;
+      try {
+        if (lastCapturedPhoto && navigator.canShare) {
+          const res = await fetch(lastCapturedPhoto);
+          const blob = await res.blob();
+          const file = new File([blob], "Attendance_Selfie.jpg", { type: "image/jpeg" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              text: lastWhatsAppMessage
+            });
+            return;
+          }
+        }
+      } catch (e) {}
+      sharePunchTextOnly();
+    }
+
+    function sharePunchTextOnly() {
+      if (!lastWhatsAppMessage) return;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(lastWhatsAppMessage)}`;
+      window.open(url, '_blank');
+    }
   </script>
 </body>
 </html>
