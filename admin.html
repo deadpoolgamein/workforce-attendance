@@ -459,6 +459,77 @@
       <div id="broadcastStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
     </div>
 
+    <!-- Supervisor Proxy Punch for Non-Smartphone / Keypad Workers -->
+    <div class="bg-gradient-to-br from-teal-950/60 to-slate-950 border border-teal-700/80 rounded-2xl p-4 mb-4 shadow-lg">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>📸</span> Keypad-Phone Staff Proxy Punch
+        </span>
+        <span class="shrink-0 text-[10px] text-teal-300 font-mono font-bold">Admin / Head</span>
+      </div>
+      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
+        Jin workers ke paas touch phone nahi hai, unka ID select karein aur live photo kheench kar attendance lagayein.
+      </p>
+
+      <div class="space-y-2 text-xs">
+        <select id="proxyEmpSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold truncate focus:outline-none focus:border-teal-500">
+          <option value="">-- Select Worker (Emp ID & Name) --</option>
+        </select>
+
+        <div class="grid grid-cols-2 gap-2">
+          <select id="proxyDutyType" class="min-w-0 w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-emerald-400 font-bold truncate">
+            <option value="ON-DUTY">🟢 ON-DUTY (In)</option>
+            <option value="OFF-DUTY">🔴 OFF-DUTY (Out)</option>
+          </select>
+          <select id="proxyShift" class="min-w-0 w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-slate-200 truncate">
+            <option value="General">General (9AM-6PM)</option>
+            <option value="Morning">Morning (6AM-2PM)</option>
+            <option value="Afternoon">Afternoon (2PM-10PM)</option>
+            <option value="Night">Night (10PM-6AM)</option>
+          </select>
+        </div>
+
+        <!-- Camera Preview for Worker Photo -->
+        <div id="proxyCamBox" class="hidden bg-slate-900 border border-teal-600 rounded-xl p-2 text-center">
+          <video id="proxyVideo" autoplay playsinline class="w-full h-44 object-cover rounded-lg bg-black mb-2"></video>
+          <canvas id="proxyCanvas" class="hidden"></canvas>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="captureAndSubmitProxyPunch()" class="py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg">
+              ✅ Capture & Mark
+            </button>
+            <button type="button" onclick="stopProxyCamera()" class="py-2 bg-rose-700 text-white font-bold rounded-lg">
+              ✖ Cancel
+            </button>
+          </div>
+        </div>
+
+        <button id="openProxyCamBtn" type="button" onclick="openProxyWorkerCamera()" class="w-full py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-extrabold rounded-xl shadow transition active:scale-95">
+          📷 Open Camera & Mark Worker Attendance
+        </button>
+        <div id="proxyStatus" class="hidden text-[11px] text-center font-mono mt-1"></div>
+      </div>
+    </div>
+
+    <!-- SUPER ADMIN ONLY: Individual Direct Mobile Punch Whitelist -->
+    <div id="superAdminDirectPunchSection" class="hidden bg-slate-950 border border-emerald-800/80 rounded-2xl p-4 mb-4 shadow-lg">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🔐</span> Direct Mobile Punch Permission
+        </span>
+        <span class="shrink-0 text-[10px] text-cyan-400 font-mono font-bold">Super Admin Only</span>
+      </div>
+      <p class="text-[11px] text-slate-300 mb-2.5 leading-relaxed">
+        Sirf yahan likhe gaye Employee IDs hi bina QR scan kiye direct mobile punch kar sakenge (comma laga kar IDs likhein):
+      </p>
+      <div class="flex items-center gap-2 w-full">
+        <input type="text" id="allowedDirectIdsInput" placeholder="e.g. J-5383, J-102, J-215" class="flex-1 min-w-0 w-0 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono uppercase text-emerald-300 focus:outline-none focus:border-emerald-500">
+        <button onclick="saveAllowedDirectPunchIds()" class="shrink-0 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow transition active:scale-95">
+          Save IDs
+        </button>
+      </div>
+      <div id="directWhitelistStatus" class="hidden mt-2 text-[11px] text-center font-mono"></div>
+    </div>
+
     <!-- Mobile Punch Toggle Card -->
     <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
       <div class="flex items-center justify-between mb-1">
@@ -697,6 +768,7 @@
         if (data.status === "success") {
           deptSubDeptMap = data.deptMap;
           renderDeptDropdowns();
+          populateProxyEmpDropdown();
           document.getElementById('addEmpDept').value = newDept.trim();
           syncTradeOptions();
           alert(data.message);
@@ -728,6 +800,7 @@
         if (data.status === "success") {
           deptSubDeptMap = data.deptMap;
           renderDeptDropdowns();
+          populateProxyEmpDropdown();
           alert(data.message);
         } else {
           alert("Error: " + data.message);
@@ -1723,6 +1796,7 @@
             document.getElementById('superAdminQrSection').classList.remove('hidden');
             document.getElementById('superAdminShiftSection').classList.remove('hidden');
             document.getElementById('superAdminHolidaySection').classList.remove('hidden');
+            document.getElementById('superAdminShiftSection').classList.remove('hidden');
 
             viewBadge.innerText = "Full Master DB";
             viewBadge.className = "text-[10px] text-cyan-400 font-mono font-bold";
@@ -2114,6 +2188,124 @@
       populateLocationsDropdown();
       renderShiftsList();
     });
+    let proxyStream = null;
+
+    function populateProxyEmpDropdown() {
+      const sel = document.getElementById('proxyEmpSelect');
+      if (!sel) return;
+      sel.innerHTML = `<option value="">-- Select Worker (${allEmployeesList.length} Staff) --</option>`;
+      allEmployeesList.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = `${emp.id} — ${emp.name} (${emp.trade})`;
+        sel.appendChild(opt);
+      });
+    }
+
+    async function openProxyWorkerCamera() {
+      const targetId = document.getElementById('proxyEmpSelect').value;
+      if (!targetId) {
+        alert("Pehle list me se Worker select karein!");
+        return;
+      }
+      try {
+        proxyStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 480 }, height: { ideal: 480 } },
+          audio: false
+        });
+        document.getElementById('proxyVideo').srcObject = proxyStream;
+        document.getElementById('proxyCamBox').classList.remove('hidden');
+        document.getElementById('openProxyCamBtn').classList.add('hidden');
+      } catch (e) {
+        alert("Camera open nahi hua: " + e.message);
+      }
+    }
+
+    function stopProxyCamera() {
+      if (proxyStream) {
+        proxyStream.getTracks().forEach(t => t.stop());
+        proxyStream = null;
+      }
+      document.getElementById('proxyCamBox').classList.add('hidden');
+      document.getElementById('openProxyCamBtn').classList.remove('hidden');
+    }
+
+    async function captureAndSubmitProxyPunch() {
+      const targetId = document.getElementById('proxyEmpSelect').value;
+      const dutyType = document.getElementById('proxyDutyType').value;
+      const shift = document.getElementById('proxyShift').value;
+      const status = document.getElementById('proxyStatus');
+
+      const video = document.getElementById('proxyVideo');
+      const canvas = document.getElementById('proxyCanvas');
+      canvas.width = 400;
+      canvas.height = 400;
+      canvas.getContext('2d').drawImage(video, 0, 0, 400, 400);
+      const photoBase64 = canvas.toDataURL('image/jpeg', 0.65);
+
+      stopProxyCamera();
+      status.classList.remove('hidden');
+      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
+      status.innerText = "Marking Supervisor Proxy Attendance...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "SUPERVISOR_PROXY_PUNCH",
+            pin: authenticatedPin,
+            targetEmpId: targetId,
+            dutyType: dutyType,
+            shift: shift,
+            photo: photoBase64
+          })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
+          status.innerText = "✔ " + data.message;
+        } else {
+          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (e) {
+        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+        status.innerText = "Network Error!";
+      }
+    }
+
+    async function saveAllowedDirectPunchIds() {
+      const allowedIds = document.getElementById('allowedDirectIdsInput').value.trim().toUpperCase();
+      const status = document.getElementById('directWhitelistStatus');
+      status.classList.remove('hidden');
+      status.className = "mt-2 text-[11px] text-center font-mono text-yellow-300";
+      status.innerText = "Updating Whitelist...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "SAVE_DIRECT_PUNCH_IDS",
+            pin: authenticatedPin,
+            allowedIds: allowedIds
+          })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          document.getElementById('allowedDirectIdsInput').value = data.allowedIds;
+          status.className = "mt-2 text-[11px] text-center font-mono text-emerald-400";
+          status.innerText = "✔ " + data.message;
+        } else {
+          status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (e) {
+        status.className = "mt-2 text-[11px] text-center font-mono text-rose-400";
+        status.innerText = "Network Error!";
+      }
+    }
   </script>
 </body>
 </html>
