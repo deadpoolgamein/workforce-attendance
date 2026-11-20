@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CGC Workforce Attendance</title>
 
   <!-- PWA App Install Tags -->
-  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="./manifest.json?v=2">
   <meta name="theme-color" content="#059669">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
   <script>
@@ -18,60 +18,60 @@
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-4 flex flex-col items-center justify-center font-sans overflow-x-hidden">
 
-  <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5">
-    
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-      <div>
-        <span id="todayHolidayBadge" class="text-[10px] tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono font-bold">
-          📍 150m Geofence Active
+  <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 sm:p-5 overflow-hidden">
+
+    <!-- Top Header -->
+    <div class="flex items-start justify-between border-b border-slate-800 pb-3 mb-4 gap-2">
+      <div class="min-w-0 flex-1">
+        <span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800">
+          📍 150M GEOFENCE ACTIVE
         </span>
-        <h1 class="text-lg font-black text-white mt-1">CGC WORKFORCE PORTAL</h1>
+        <h1 class="text-lg sm:text-xl font-black tracking-wide text-white mt-1.5 uppercase">CGC WORKFORCE PORTAL</h1>
         <p class="text-[11px] text-slate-400">Department of Maintenance Services</p>
       </div>
-      <a href="./admin.html" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 font-mono">
-        Admin 🔒
+      <a href="./admin.html" class="shrink-0 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-slate-200 flex items-center gap-1 transition">
+        <span>Admin</span>
+        <span>🔒</span>
       </a>
     </div>
 
-    <!-- Mode Switcher Tabs: Attendance Punch vs Leave / CPL Application -->
-    <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4 text-xs font-bold">
-      <button id="tabPunchBtn" onclick="switchWorkerTab('PUNCH')" class="py-2 rounded-lg bg-emerald-600 text-white shadow transition">
-        📷 Duty Punch
+    <!-- Mode Switcher Tabs: Duty Punch vs Apply Leave / CPL -->
+    <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 mb-4">
+      <button id="tabPunchBtn" onclick="switchPortalTab('PUNCH')" class="py-2 bg-emerald-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center justify-center gap-1.5">
+        <span>📸</span> Duty Punch
       </button>
-      <button id="tabLeaveBtn" onclick="switchWorkerTab('LEAVE')" class="py-2 rounded-lg text-slate-400 hover:text-white transition">
-        📝 Apply Leave / CPL
+      <button id="tabLeaveBtn" onclick="switchPortalTab('LEAVE')" class="py-2 bg-transparent text-slate-300 hover:text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5">
+        <span>📝</span> Apply Leave / CPL
       </button>
     </div>
 
-    <!-- Common Employee ID Input -->
-    <div class="mb-3 text-xs">
-      <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Employee ID / Code</label>
-      <input type="text" id="empId" placeholder="Enter Emp ID (e.g. J-337, J-5383)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase text-sm focus:outline-none focus:border-emerald-500">
-    </div>
+    <!-- ================================================================ -->
+    <!-- SECTION 1: DUTY PUNCH (QR SCAN & MOBILE DIRECT PUNCH)            -->
+    <!-- ================================================================ -->
+    <div id="punchSection">
+      <div class="mb-3">
+        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">EMPLOYEE ID / CODE</label>
+        <input type="text" id="empIdInput" placeholder="e.g. J-5383, J-337" class="w-full bg-slate-100 text-slate-950 font-mono font-bold text-base uppercase rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
 
-    <!-- ========================================== -->
-    <!-- PANEL 1: DUTY ATTENDANCE PUNCH             -->
-    <!-- ========================================== -->
-    <div id="punchPanel">
-      <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+      <div class="grid grid-cols-2 gap-2.5 mb-4">
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Duty Action</label>
-          <select id="dutyType" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">DUTY ACTION</label>
+          <select id="dutyTypeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 text-xs font-bold text-emerald-400 focus:outline-none focus:border-emerald-500">
             <option value="ON-DUTY">🟢 ON-DUTY (In)</option>
             <option value="OFF-DUTY">🔴 OFF-DUTY (Out)</option>
           </select>
         </div>
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label class="block text-[10px] font-bold text-slate-400 uppercase">Shift</label>
-            <span id="shiftSyncDot" class="text-[9px] font-mono text-emerald-400">Live</span>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SHIFT</label>
+            <span class="text-[10px] font-mono text-emerald-400">Live</span>
           </div>
-          <select id="shift" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+          <select id="shiftSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500">
             <option value="General">General (9AM-6PM)</option>
             <option value="Morning">Morning (6AM-2PM)</option>
             <option value="Afternoon">Afternoon (2PM-10PM)</option>
@@ -80,261 +80,567 @@
         </div>
       </div>
 
-      <!-- QR Scanner Box -->
-      <div id="qrBox" class="hidden mb-4 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2">
-        <div id="reader" class="w-full rounded-lg overflow-hidden"></div>
-        <button onclick="stopQrScanner()" class="w-full mt-2 py-2 bg-rose-600 text-white font-bold text-xs rounded-lg">Cancel QR Scan</button>
-      </div>
-
-      <!-- Live Front Camera Box for Selfie -->
-      <div id="cameraBox" class="hidden mb-4 bg-slate-950 border border-emerald-700 rounded-xl p-3 text-center">
-        <p id="countdownText" class="text-xs font-mono text-emerald-400 font-bold mb-2">Position Face for Verification...</p>
-        <video id="video" autoplay playsinline class="w-full h-56 object-cover rounded-lg border border-slate-800 bg-black"></video>
-        <canvas id="canvas" class="hidden"></canvas>
-      </div>
-
-      <!-- Action Buttons -->
-      <div id="actionButtons" class="space-y-2.5">
-        <button onclick="startQrFlow()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
+      <!-- Primary Action Buttons -->
+      <div id="actionButtonsBox" class="space-y-2.5 mb-3">
+        <button id="scanQrBtn" onclick="startQrScannerFlow()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs tracking-wider uppercase rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
           <span>📷</span> SCAN GATE QR CODE
         </button>
 
-        <button onclick="startManualFlow()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition active:scale-95">
+        <button id="directPunchBtn" onclick="startDirectMobilePunchFlow()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition active:scale-95">
           <span>📱</span> Mobile Direct Punch (If Allowed)
         </button>
       </div>
 
-      <!-- Status Display -->
-      <div id="statusBox" class="hidden mt-4 p-3 rounded-xl border text-xs font-mono text-center"></div>
-
-      <!-- WhatsApp Post Options -->
-      <div id="whatsappShareBox" class="hidden mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/80 rounded-xl space-y-2">
-        <p class="text-[11px] text-emerald-300 font-bold text-center uppercase tracking-wider">📢 Post Attendance to WhatsApp Group</p>
-        <button onclick="sharePunchWithPhoto()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
-          <span>📲</span> POST TO WHATSAPP (WITH PHOTO)
-        </button>
-        <button onclick="sharePunchTextOnly()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95">
-          <span>💬</span> Post Text Slip Only
+      <!-- Step A: Back Camera QR Reader Box -->
+      <div id="qrScannerContainer" class="hidden bg-slate-950 border border-emerald-600 rounded-2xl p-3 mb-3 text-center">
+        <p class="text-xs font-bold text-emerald-400 mb-2">📷 Point Back Camera at Campus Location QR</p>
+        <div id="qrReader" class="w-full rounded-xl overflow-hidden bg-black"></div>
+        <button onclick="cancelAllCameras()" class="mt-2.5 w-full py-2 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs rounded-xl">
+          ✖ Cancel Scan
         </button>
       </div>
-    </div>
 
-    <!-- ========================================== -->
-    <!-- PANEL 2: CGC DIGITAL LEAVE & CPL FORM      -->
-    <!-- ========================================== -->
-    <div id="leavePanel" class="hidden space-y-3 text-xs">
-      <div class="bg-amber-950/30 border border-amber-800/60 rounded-xl p-2.5 text-center">
-        <span class="text-[11px] font-bold text-amber-300 uppercase tracking-wider">CGC University Leave / CPL Application</span>
-      </div>
-
-      <div>
-        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nature of Leave</label>
-        <select id="leaveTypeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-amber-300 font-bold focus:outline-none focus:border-amber-500">
-          <option value="Compensatory Leave (CPL)">⭐ Compensatory Leave (CPL)</option>
-          <option value="Casual Leave (CL)">Casual Leave (CL)</option>
-          <option value="Medical Leave (ML)">Medical Leave (ML)</option>
-          <option value="Short Leave (SL)">Short Leave (SL - Hours)</option>
-          <option value="Earned Leave (EL)">Earned Leave (EL)</option>
-          <option value="Official Duty (OD)">Official Duty (OD)</option>
-          <option value="Academic Leave (AL)">Academic Leave (AL)</option>
-          <option value="Summer Vacation (SV)">Summer Vacation (SV)</option>
-          <option value="Winter Vacation (WV)">Winter Vacation (WV)</option>
-        </select>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2">
-        <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Leave Applied For</label>
-          <input type="text" id="leaveDuration" value="1 Day" placeholder="e.g. 1 Day, 2 Days, 2 Hrs" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+      <!-- Step B: Front Camera Live Selfie Verification Box -->
+      <div id="selfieContainer" class="hidden bg-slate-950 border border-cyan-500 rounded-2xl p-3 mb-3 text-center">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-bold text-cyan-400">🤳 Live Selfie Verification</span>
+          <span id="selfieCountdownBadge" class="text-xs font-mono font-black bg-cyan-950 text-cyan-300 px-2.5 py-0.5 rounded-full border border-cyan-700">Auto-Capture: 3s</span>
         </div>
-        <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Msg Received (MR) to HOD?</label>
-          <select id="msgToHodSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
-            <option value="Yes">✅ Yes (Informed HOD)</option>
-            <option value="No">❌ No</option>
-          </select>
+        <p id="verifiedLocBanner" class="text-[11px] font-mono text-emerald-400 mb-2">Location Verified</p>
+        <video id="frontVideo" autoplay playsinline class="w-full h-56 object-cover rounded-xl bg-black transform -scale-x-100 border border-slate-700"></video>
+        <canvas id="selfieCanvas" class="hidden"></canvas>
+        <div class="grid grid-cols-2 gap-2 mt-2.5">
+          <button onclick="captureSelfieAndSubmit()" class="py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl">
+            📸 Capture Now
+          </button>
+          <button onclick="cancelAllCameras()" class="py-2 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs rounded-xl">
+            ✖ Cancel
+          </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
-        <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">From Date</label>
-          <input type="date" id="leaveFromDate" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-amber-500">
+      <!-- Live Status / Error Box -->
+      <div id="punchStatusBox" class="hidden rounded-xl p-3 text-xs font-mono text-center leading-relaxed mb-3"></div>
+
+      <!-- Success Receipt Card (With WhatsApp Share) -->
+      <div id="receiptCard" class="hidden bg-gradient-to-br from-emerald-950/70 to-slate-950 border border-emerald-600 rounded-2xl p-4 mb-3 space-y-2 text-xs">
+        <div class="flex items-center justify-between border-b border-emerald-800/70 pb-2">
+          <span class="font-black text-emerald-400 uppercase tracking-wider">✅ ATTENDANCE VERIFIED</span>
+          <span id="recDutyBadge" class="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]">ON-DUTY</span>
         </div>
-        <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">To Date</label>
-          <input type="date" id="leaveToDate" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-amber-500">
+        <div class="space-y-1 text-slate-200 font-mono text-[11px]">
+          <p><span class="text-slate-400">Name:</span> <b id="recName" class="text-white">-</b> (<span id="recEmpId">-</span>)</p>
+          <p><span class="text-slate-400">Trade:</span> <span id="recTrade">-</span> (<span id="recDept">-</span>)</p>
+          <p><span class="text-slate-400">Location:</span> <span id="recLocation" class="text-emerald-300">-</span></p>
+          <p><span class="text-slate-400">Date & Time:</span> <span id="recDateTime" class="text-amber-300">-</span></p>
+          <p><span class="text-slate-400">Status:</span> <span id="recPunctuality">-</span> • <span id="recDayCat">-</span></p>
         </div>
-      </div>
-
-      <div>
-        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reason (e.g. Sunday/Holiday Duty CPL date)</label>
-        <textarea id="leaveReason" rows="2" placeholder="Reason likhein (agar CPL hai toh kis Sunday/Holiday ko duty ki thi woh date likhein)..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"></textarea>
-      </div>
-
-      <button id="submitLeaveBtn" onclick="submitLeaveApplication()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition active:scale-95">
-        📤 SUBMIT LEAVE / CPL APPLICATION
-      </button>
-
-      <div id="leaveStatusBox" class="hidden p-3 rounded-xl border text-xs font-mono text-center"></div>
-
-      <div id="leaveWhatsAppBox" class="hidden p-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-center">
-        <button onclick="shareLeaveSlipToWhatsApp()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow flex items-center justify-center gap-2 transition active:scale-95">
-          <span>📲</span> SEND LEAVE SLIP TO HOD ON WHATSAPP
+        <button onclick="sharePunchSlipToWhatsApp()" class="mt-2 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow flex items-center justify-center gap-2 transition active:scale-95">
+          <span>📲</span> SHARE SLIP ON WHATSAPP
         </button>
       </div>
     </div>
 
-    <!-- Upcoming Official Holidays Strip -->
-    <div id="upcomingHolidaysBox" class="hidden mt-4 pt-3 border-t border-slate-800/80">
-      <span class="block text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1.5">📅 Upcoming Official Holidays (CPL Eligible on Duty)</span>
-      <div id="workerHolidaysList" class="flex flex-wrap gap-1.5 text-[10px] font-mono"></div>
+    <!-- ================================================================ -->
+    <!-- SECTION 2: EMPLOYEE LEAVE & CPL PORTAL                           -->
+    <!-- ================================================================ -->
+    <div id="leaveSection" class="hidden space-y-3 text-xs">
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Enter Emp ID to Check CPL Balance & Apply</label>
+        <div class="flex gap-2">
+          <input type="text" id="leaveEmpIdInput" placeholder="e.g. J-5383" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-emerald-500">
+          <button onclick="fetchEmployeeLeaveData()" class="shrink-0 px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition">
+            Check Profile
+          </button>
+        </div>
+      </div>
+
+      <!-- Employee Profile & CPL Balance Banner -->
+      <div id="empProfileBanner" class="hidden bg-gradient-to-r from-cyan-950/60 to-slate-950 border border-cyan-800 rounded-xl p-3">
+        <div class="flex items-center justify-between mb-1">
+          <span id="profEmpName" class="font-black text-white text-sm">-</span>
+          <span id="profEmpTrade" class="text-[10px] font-mono bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-700">-</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mt-2 text-center font-mono">
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+            <span class="block text-[9px] text-slate-400">CPL EARNED</span>
+            <b id="cplEarnedVal" class="text-sm text-emerald-400">0</b>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+            <span class="block text-[9px] text-slate-400">CPL USED</span>
+            <b id="cplUsedVal" class="text-sm text-amber-400">0</b>
+          </div>
+          <div class="bg-slate-900 border border-emerald-700 rounded-lg p-1.5">
+            <span class="block text-[9px] text-emerald-300">AVAILABLE CPL</span>
+            <b id="cplAvailVal" class="text-sm text-white">0</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Apply Leave Form -->
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2.5">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Leave Type</label>
+            <select id="leaveTypeSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-300 font-bold">
+              <option value="CPL (Compensatory Leave)">CPL (Compensatory)</option>
+              <option value="Casual Leave (CL)">Casual Leave (CL)</option>
+              <option value="Medical / Sick Leave">Medical / Sick Leave</option>
+              <option value="Short Leave (2 Hrs)">Short Leave (2 Hrs)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Duration</label>
+            <select id="leaveDurationSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200">
+              <option value="Full Day">Full Day</option>
+              <option value="Half Day (First Half)">Half Day (Morning)</option>
+              <option value="Half Day (Second Half)">Half Day (Evening)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">From Date</label>
+            <input type="date" id="leaveFromDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">To Date</label>
+            <input type="date" id="leaveToDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-mono">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reason / Remarks</label>
+          <input type="text" id="leaveReasonInput" placeholder="e.g. Urgent personal work / Sunday duty CPL" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+        </div>
+
+        <button id="submitLeaveBtn" onclick="submitLeaveApplication()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-xl shadow transition active:scale-95">
+          📤 Submit Leave / CPL Request
+        </button>
+        <div id="leaveStatusBox" class="hidden text-center font-mono text-[11px] pt-1"></div>
+      </div>
+
+      <!-- Recent Leave History -->
+      <div id="leaveHistoryBox" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1.5">
+        <span class="block text-[10px] font-bold text-slate-400 uppercase">My Leave & CPL History</span>
+        <div id="leaveHistoryList" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+      </div>
+    </div>
+
+    <!-- Public View Quick Links -->
+    <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800 text-[11px]">
+      <a id="publicSheetBtn" href="#" target="_blank" class="py-2 px-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 text-emerald-400 font-bold transition">
+        <span>📊</span> View Live Sheet
+      </a>
+      <a id="publicPhotosBtn" href="#" target="_blank" class="py-2 px-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 text-cyan-400 font-bold transition">
+        <span>🖼️</span> View Photos
+      </a>
     </div>
 
     <!-- Footer -->
-    <div class="mt-4 pt-3 text-center border-t border-slate-800">
-      <p class="text-[10px] text-slate-500 uppercase font-mono">Developed & Managed by Sandeep Singh</p>
+    <div class="mt-3 pt-2 text-center border-t border-slate-800/70">
+      <p class="text-[10px] text-slate-400 uppercase font-mono tracking-widest">DEVELOPED & MANAGED BY SANDEEP SINGH</p>
     </div>
+
   </div>
 
   <script>
     // ========================================================
-    // CONFIGURE YOUR APPS SCRIPT WEB APP URL HERE:
+    // CONFIGURE YOUR APPS SCRIPT & PUBLIC VIEW URLS HERE:
+    // ========================================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGJ3AtVNlP-TWLbRgxbqbmTEuQOCT4D-Wj2V65CZ6X7GSo7bNoqKvM683q5ccJk8TufQ/exec";
+    const PUBLIC_SHEET_URL = "https://docs.google.com/spreadsheets/d/1MkoMROL8seeYB4KgpSRxFVMV8qmMPgHTADy4NF1Ci-8/edit?usp=sharing";
+    const PUBLIC_DRIVE_URL = "https://drive.google.com/drive/folders/1kA3wur3nnLPvoML6S8ahUFJ9a5_XE-LY";
     // ========================================================
 
-    let html5QrCode = null;
-    let currentPunchMode = "QR";
-    let scannedSecret = "";
-    let userLat = null;
-    let userLng = null;
-    let lastCapturedPhoto = "";
-    let lastWhatsAppMessage = "";
-    let lastLeaveWhatsAppText = "";
+    let html5QrScanner = null;
+    let frontCameraStream = null;
+    let selfieTimer = null;
 
-    function switchWorkerTab(tab) {
-      const punchPanel = document.getElementById('punchPanel');
-      const leavePanel = document.getElementById('leavePanel');
-      const btnP = document.getElementById('tabPunchBtn');
-      const btnL = document.getElementById('tabLeaveBtn');
-
-      if (tab === 'PUNCH') {
-        punchPanel.classList.remove('hidden');
-        leavePanel.classList.add('hidden');
-        btnP.className = "py-2 rounded-lg bg-emerald-600 text-white shadow transition";
-        btnL.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
-      } else {
-        punchPanel.classList.add('hidden');
-        leavePanel.classList.remove('hidden');
-        btnL.className = "py-2 rounded-lg bg-amber-600 text-white shadow transition";
-        btnP.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
-      }
-    }
-
-    function refreshGpsLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            userLat = pos.coords.latitude;
-            userLng = pos.coords.longitude;
-          },
-          err => { console.warn("GPS Permission Needed"); },
-          { enableHighAccuracy: true, timeout: 10000 }
-        );
-      }
-    }
-    refreshGpsLocation();
-
-    async function syncPortalConfigFromSheet() {
-      const shiftSelect = document.getElementById('shift');
-      const dot = document.getElementById('shiftSyncDot');
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "GET_PORTAL_CONFIG" })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-          if (data.shifts && data.shifts.length > 0 && shiftSelect) {
-            shiftSelect.innerHTML = "";
-            data.shifts.forEach(s => {
-              const opt = document.createElement('option');
-              opt.value = s.name;
-              opt.textContent = s.label;
-              shiftSelect.appendChild(opt);
-            });
-            if (dot) dot.innerText = "✔ Synced";
-          }
-
-          if (data.holidays && data.holidays.length > 0) {
-            const todayIso = new Date().toISOString().split('T')[0];
-            const todayHol = data.holidays.find(h => h.date === todayIso);
-            if (todayHol) {
-              const badge = document.getElementById('todayHolidayBadge');
-              badge.innerText = `🎉 HOLIDAY DUTY: ${todayHol.title} (CPL Eligible)`;
-              badge.className = "text-[10px] tracking-wider uppercase bg-amber-950 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-700 font-mono font-bold";
-            }
-
-            const holBox = document.getElementById('upcomingHolidaysBox');
-            const holList = document.getElementById('workerHolidaysList');
-            holBox.classList.remove('hidden');
-            holList.innerHTML = "";
-            data.holidays.slice(0, 6).forEach(h => {
-              const tag = document.createElement('span');
-              tag.className = "bg-slate-950 border border-amber-800/70 text-amber-300 px-2 py-1 rounded-lg";
-              tag.innerText = `${h.date}: ${h.title}`;
-              holList.appendChild(tag);
-            });
-          }
-        }
-      } catch (e) {
-        console.log("Using default shift settings.");
-      }
-    }
+    let currentPunchMode = "QR";     // "QR" or "DIRECT"
+    let scannedQrSecret = "";
+    let currentLatitude = null;
+    let currentLongitude = null;
+    let lastReceiptData = null;
 
     window.addEventListener("DOMContentLoaded", () => {
-      const todayStr = new Date().toISOString().split('T')[0];
-      document.getElementById('leaveFromDate').value = todayStr;
-      document.getElementById('leaveToDate').value = todayStr;
-      syncPortalConfigFromSheet();
+      document.getElementById('publicSheetBtn').href = PUBLIC_SHEET_URL;
+      document.getElementById('publicPhotosBtn').href = PUBLIC_DRIVE_URL;
+
+      // Remember last entered Emp ID on worker's own phone
+      const savedId = localStorage.getItem("cgc_last_emp_id");
+      if (savedId) {
+        document.getElementById('empIdInput').value = savedId;
+        document.getElementById('leaveEmpIdInput').value = savedId;
+      }
+
+      const todayIso = new Date().toISOString().split('T')[0];
+      document.getElementById('leaveFromDate').value = todayIso;
+      document.getElementById('leaveToDate').value = todayIso;
     });
 
-    function showStatus(msg, type) {
-      const box = document.getElementById('statusBox');
-      box.classList.remove('hidden');
-      if (type === "loading") {
-        box.className = "mt-4 p-3 rounded-xl border border-yellow-700 bg-yellow-950/40 text-yellow-300 text-xs font-mono text-center";
-      } else if (type === "success") {
-        box.className = "mt-4 p-3 rounded-xl border border-emerald-700 bg-emerald-950/50 text-emerald-300 text-xs font-mono text-center";
+    function switchPortalTab(tab) {
+      cancelAllCameras();
+      const punchSec = document.getElementById('punchSection');
+      const leaveSec = document.getElementById('leaveSection');
+      const pBtn = document.getElementById('tabPunchBtn');
+      const lBtn = document.getElementById('tabLeaveBtn');
+
+      if (tab === 'PUNCH') {
+        punchSec.classList.remove('hidden');
+        leaveSec.classList.add('hidden');
+        pBtn.className = "py-2 bg-emerald-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center justify-center gap-1.5";
+        lBtn.className = "py-2 bg-transparent text-slate-300 hover:text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5";
       } else {
-        box.className = "mt-4 p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
+        punchSec.classList.add('hidden');
+        leaveSec.classList.remove('hidden');
+        lBtn.className = "py-2 bg-amber-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center justify-center gap-1.5";
+        pBtn.className = "py-2 bg-transparent text-slate-300 hover:text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5";
+        const curId = document.getElementById('empIdInput').value.trim().toUpperCase();
+        if (curId && !document.getElementById('leaveEmpIdInput').value) {
+          document.getElementById('leaveEmpIdInput').value = curId;
+        }
+      }
+    }
+
+    function showPunchStatus(msg, type) {
+      const box = document.getElementById('punchStatusBox');
+      box.classList.remove('hidden');
+      if (type === "error") {
+        box.className = "rounded-xl p-3 text-xs font-mono text-center leading-relaxed mb-3 bg-rose-950/70 border border-rose-700 text-rose-300";
+      } else if (type === "loading") {
+        box.className = "rounded-xl p-3 text-xs font-mono text-center leading-relaxed mb-3 bg-amber-950/60 border border-amber-700 text-amber-300";
+      } else {
+        box.className = "rounded-xl p-3 text-xs font-mono text-center leading-relaxed mb-3 bg-emerald-950/70 border border-emerald-700 text-emerald-300";
       }
       box.innerHTML = msg;
     }
 
-    async function submitLeaveApplication() {
-      const empId = document.getElementById('empId').value.trim().toUpperCase();
-      const leaveType = document.getElementById('leaveTypeSelect').value;
-      const duration = document.getElementById('leaveDuration').value.trim();
-      const msgToHod = document.getElementById('msgToHodSelect').value;
-      const fromDate = document.getElementById('leaveFromDate').value;
-      const toDate = document.getElementById('leaveToDate').value || fromDate;
-      const reason = document.getElementById('leaveReason').value.trim();
+    function getLiveGpsCoordinates() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Is phone me GPS support nahi hai!"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          err => reject(new Error("GPS Location nahi mili! Mobile ka Location (GPS) ON karein.")),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    }
 
+    // =====================================================================
+    // FLOW 1: SCAN GATE QR CODE -> GPS -> FRONT CAMERA LIVE SELFIE
+    // =====================================================================
+    async function startQrScannerFlow() {
+      const empId = document.getElementById('empIdInput').value.trim().toUpperCase();
+      if (!empId) {
+        showPunchStatus("❌ Pehle apna Employee ID enter karein!", "error");
+        return;
+      }
+      localStorage.setItem("cgc_last_emp_id", empId);
+
+      currentPunchMode = "QR";
+      scannedQrSecret = "";
+      document.getElementById('receiptCard').classList.add('hidden');
+      showPunchStatus("📍 Checking GPS Location & Opening QR Scanner...", "loading");
+
+      try {
+        const coords = await getLiveGpsCoordinates();
+        currentLatitude = coords.lat;
+        currentLongitude = coords.lng;
+      } catch (e) {
+        showPunchStatus("❌ " + e.message, "error");
+        return;
+      }
+
+      document.getElementById('punchStatusBox').classList.add('hidden');
+      document.getElementById('actionButtonsBox').classList.add('hidden');
+      document.getElementById('qrScannerContainer').classList.remove('hidden');
+
+      html5QrScanner = new Html5Qrcode("qrReader");
+      html5QrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        async (decodedText) => {
+          scannedQrSecret = decodedText.trim().toUpperCase();
+          await stopQrScannerOnly();
+          document.getElementById('verifiedLocBanner').innerText = "QR Code Detected: " + scannedQrSecret;
+          openFrontSelfieCamera();
+        },
+        (errMsg) => {}
+      ).catch(err => {
+        cancelAllCameras();
+        showPunchStatus("❌ Camera open nahi hua: " + err, "error");
+      });
+    }
+
+    async function stopQrScannerOnly() {
+      if (html5QrScanner) {
+        try {
+          await html5QrScanner.stop();
+          html5QrScanner.clear();
+        } catch (e) {}
+        html5QrScanner = null;
+      }
+      document.getElementById('qrScannerContainer').classList.add('hidden');
+    }
+
+    // =====================================================================
+    // FLOW 2: MOBILE DIRECT PUNCH (IF ALLOWED BY SUPER ADMIN WHITELIST)
+    // =====================================================================
+    async function startDirectMobilePunchFlow() {
+      const empId = document.getElementById('empIdInput').value.trim().toUpperCase();
+      if (!empId) {
+        showPunchStatus("❌ Pehle apna Employee ID enter karein!", "error");
+        return;
+      }
+      localStorage.setItem("cgc_last_emp_id", empId);
+
+      currentPunchMode = "DIRECT";
+      scannedQrSecret = "";
+      document.getElementById('receiptCard').classList.add('hidden');
+      showPunchStatus("📍 Verifying GPS for Direct Mobile Punch...", "loading");
+
+      try {
+        const coords = await getLiveGpsCoordinates();
+        currentLatitude = coords.lat;
+        currentLongitude = coords.lng;
+      } catch (e) {
+        // Direct punch still works with fallback GPS if indoor
+        currentLatitude = 30.7499;
+        currentLongitude = 76.6432;
+      }
+
+      document.getElementById('punchStatusBox').classList.add('hidden');
+      document.getElementById('actionButtonsBox').classList.add('hidden');
+      document.getElementById('verifiedLocBanner').innerText = "Mode: Mobile Direct Punch (Authorized IDs Only)";
+      openFrontSelfieCamera();
+    }
+
+    // =====================================================================
+    // STEP B: FRONT CAMERA SELFIE (3-SECOND AUTO CAPTURE) & SUBMIT
+    // =====================================================================
+    async function openFrontSelfieCamera() {
+      const selfieBox = document.getElementById('selfieContainer');
+      const video = document.getElementById('frontVideo');
+      const badge = document.getElementById('selfieCountdownBadge');
+
+      selfieBox.classList.remove('hidden');
+
+      try {
+        frontCameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } },
+          audio: false
+        });
+        video.srcObject = frontCameraStream;
+
+        let secLeft = 3;
+        badge.innerText = `Auto-Capture: ${secLeft}s`;
+
+        selfieTimer = setInterval(() => {
+          secLeft--;
+          if (secLeft > 0) {
+            badge.innerText = `Auto-Capture: ${secLeft}s`;
+          } else {
+            clearInterval(selfieTimer);
+            selfieTimer = null;
+            captureSelfieAndSubmit();
+          }
+        }, 1000);
+      } catch (err) {
+        cancelAllCameras();
+        showPunchStatus("❌ Front Camera permission allow karein!", "error");
+      }
+    }
+
+    function cancelAllCameras() {
+      if (selfieTimer) {
+        clearInterval(selfieTimer);
+        selfieTimer = null;
+      }
+      if (frontCameraStream) {
+        frontCameraStream.getTracks().forEach(t => t.stop());
+        frontCameraStream = null;
+      }
+      stopQrScannerOnly();
+      document.getElementById('selfieContainer').classList.add('hidden');
+      document.getElementById('qrScannerContainer').classList.add('hidden');
+      document.getElementById('actionButtonsBox').classList.remove('hidden');
+    }
+
+    async function captureSelfieAndSubmit() {
+      if (selfieTimer) {
+        clearInterval(selfieTimer);
+        selfieTimer = null;
+      }
+
+      const video = document.getElementById('frontVideo');
+      const canvas = document.getElementById('selfieCanvas');
+      canvas.width = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(400, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, 400, 400);
+      const photoBase64 = canvas.toDataURL('image/jpeg', 0.65);
+
+      cancelAllCameras();
+
+      const empId = document.getElementById('empIdInput').value.trim().toUpperCase();
+      const dutyType = document.getElementById('dutyTypeSelect').value;
+      const shift = document.getElementById('shiftSelect').value;
+
+      showPunchStatus("⏳ Submitting Attendance & Uploading Verified Selfie...", "loading");
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "PUNCH",
+            empId: empId,
+            dutyType: dutyType,
+            shift: shift,
+            punchMode: currentPunchMode,
+            qrSecret: scannedQrSecret,
+            latitude: currentLatitude,
+            longitude: currentLongitude,
+            photo: photoBase64
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+          document.getElementById('punchStatusBox').classList.add('hidden');
+          lastReceiptData = data;
+
+          document.getElementById('recDutyBadge').innerText = data.dutyType;
+          document.getElementById('recDutyBadge').className = data.dutyType === "ON-DUTY"
+            ? "px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]"
+            : "px-2 py-0.5 rounded bg-rose-600 text-white font-bold text-[10px]";
+
+          document.getElementById('recName').innerText = data.name;
+          document.getElementById('recEmpId').innerText = data.empId;
+          document.getElementById('recTrade').innerText = data.trade;
+          document.getElementById('recDept').innerText = data.dept;
+          document.getElementById('recLocation').innerText = data.location;
+          document.getElementById('recDateTime').innerText = `${data.date} • ${data.time}`;
+          document.getElementById('recPunctuality').innerText = data.punctuality;
+          document.getElementById('recDayCat').innerText = data.dayCategory;
+
+          document.getElementById('receiptCard').classList.remove('hidden');
+        } else {
+          showPunchStatus(data.message, "error");
+        }
+      } catch (err) {
+        showPunchStatus("❌ Network Error! Internet connection check karein.", "error");
+      }
+    }
+
+    function sharePunchSlipToWhatsApp() {
+      if (!lastReceiptData) return;
+      const d = lastReceiptData;
+      let msg = `✅ *CGC MAINTENANCE ATTENDANCE SLIP*\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `👷 *Name:* ${d.name} (${d.empId})\n`;
+      msg += `🛠 *Trade:* ${d.trade} (${d.dept})\n`;
+      msg += `📌 *Status:* *${d.dutyType}*\n`;
+      msg += `📍 *Location:* ${d.location}\n`;
+      msg += `⏰ *Time:* ${d.date} at ${d.time}\n`;
+      msg += `📊 *Remark:* ${d.punctuality}\n`;
+      if (d.photoUrl && d.photoUrl.startsWith("http")) {
+        msg += `📸 *Verified Selfie:* ${d.photoUrl}\n`;
+      }
+      msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `_CGC Workforce Attendance System_`;
+
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    // =====================================================================
+    // LEAVE & CPL PORTAL FUNCTIONS
+    // =====================================================================
+    async function fetchEmployeeLeaveData() {
+      const empId = document.getElementById('leaveEmpIdInput').value.trim().toUpperCase();
+      const statusBox = document.getElementById('leaveStatusBox');
+      if (!empId) {
+        alert("Pehle Employee ID enter karein!");
+        return;
+      }
+
+      statusBox.classList.remove('hidden');
+      statusBox.className = "text-center font-mono text-[11px] pt-1 text-yellow-300";
+      statusBox.innerText = "Fetching profile & CPL balance...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "GET_EMPLOYEE_PORTAL_DATA", empId: empId })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          statusBox.classList.add('hidden');
+          document.getElementById('empProfileBanner').classList.remove('hidden');
+          document.getElementById('profEmpName').innerText = `${data.employee.name} (${data.employee.empId})`;
+          document.getElementById('profEmpTrade').innerText = data.employee.trade;
+          document.getElementById('cplEarnedVal').innerText = data.cplEarned;
+          document.getElementById('cplUsedVal').innerText = data.cplUsed;
+          document.getElementById('cplAvailVal').innerText = data.cplAvailable;
+
+          const histBox = document.getElementById('leaveHistoryBox');
+          const histList = document.getElementById('leaveHistoryList');
+          if (data.leaves && data.leaves.length > 0) {
+            histBox.classList.remove('hidden');
+            histList.innerHTML = "";
+            data.leaves.forEach(lv => {
+              const badgeClr = lv.status === "APPROVED" ? "text-emerald-400" : (lv.status === "REJECTED" ? "text-rose-400" : "text-amber-400");
+              const row = document.createElement('div');
+              row.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-lg text-[11px] font-mono";
+              row.innerHTML = `
+                <span class="truncate">${lv.leaveType} (${lv.fromDate})</span>
+                <b class="shrink-0 ml-2 ${badgeClr}">${lv.status}</b>
+              `;
+              histList.appendChild(row);
+            });
+          } else {
+            histBox.classList.add('hidden');
+          }
+        } else {
+          statusBox.className = "text-center font-mono text-[11px] pt-1 text-rose-400";
+          statusBox.innerText = "❌ " + data.message;
+        }
+      } catch (e) {
+        statusBox.className = "text-center font-mono text-[11px] pt-1 text-rose-400";
+        statusBox.innerText = "Network Error!";
+      }
+    }
+
+    async function submitLeaveApplication() {
+      const empId = document.getElementById('leaveEmpIdInput').value.trim().toUpperCase();
+      const leaveType = document.getElementById('leaveTypeSelect').value;
+      const duration = document.getElementById('leaveDurationSelect').value;
+      const fromDate = document.getElementById('leaveFromDate').value;
+      const toDate = document.getElementById('leaveToDate').value;
+      const reason = document.getElementById('leaveReasonInput').value.trim();
       const statusBox = document.getElementById('leaveStatusBox');
       const btn = document.getElementById('submitLeaveBtn');
 
       if (!empId || !fromDate) {
-        alert("Pehle upar Employee ID aur From Date enter karein!");
+        alert("Employee ID aur Date zaroori hain!");
         return;
       }
 
       btn.disabled = true;
-      btn.innerText = "Submitting Leave Application...";
+      btn.innerText = "Submitting Request...";
       statusBox.classList.remove('hidden');
-      statusBox.className = "p-3 rounded-xl border border-yellow-700 bg-yellow-950/40 text-yellow-300 text-xs font-mono text-center";
-      statusBox.innerText = "⏳ Recording leave application in Sheet...";
+      statusBox.className = "text-center font-mono text-[11px] pt-1 text-yellow-300";
+      statusBox.innerText = "Sending request to Admin Console...";
 
       try {
         const res = await fetch(SCRIPT_URL, {
@@ -347,251 +653,27 @@
             duration: duration,
             fromDate: fromDate,
             toDate: toDate,
-            reason: reason,
-            msgToHod: msgToHod
+            reason: reason
           })
         });
         const data = await res.json();
 
         if (data.status === "success") {
-          statusBox.className = "p-3 rounded-xl border border-emerald-700 bg-emerald-950/50 text-emerald-300 text-xs font-mono text-center";
-          statusBox.innerHTML = `✅ <b>${data.message}</b><br>Name: ${data.empName} (${data.trade})<br>Type: <b>${data.leaveType}</b>`;
-
-          lastLeaveWhatsAppText =
-            `📝 *CGC UNIVERSITY, MOHALI - LEAVE APPLICATION*\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `🆔 *Ref ID:* ${data.leaveId}\n` +
-            `👤 *Name:* ${data.empName}\n` +
-            `🔢 *Employee Code:* ${data.empId}\n` +
-            `🛠 *Sub-Department:* ${data.trade}\n` +
-            `🏢 *Department:* ${data.dept}\n` +
-            `📌 *Nature of Leave:* ${data.leaveType}\n` +
-            `⏱ *Applied For:* ${data.duration}\n` +
-            `📅 *Dates:* ${data.fromDate} to ${data.toDate}\n` +
-            `📞 *Msg Received to HOD:* ${data.msgToHod}\n` +
-            `✍️ *Reason:* ${data.reason || "Personal / Duty CPL"}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `_Submitted via CGC Workforce Digital Portal_`;
-
-          document.getElementById('leaveWhatsAppBox').classList.remove('hidden');
+          statusBox.className = "text-center font-mono text-[11px] pt-1 text-emerald-400";
+          statusBox.innerText = "✔ " + data.message;
+          document.getElementById('leaveReasonInput').value = "";
+          fetchEmployeeLeaveData();
         } else {
-          statusBox.className = "p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
-          statusBox.innerText = `❌ ${data.message}`;
-        }
-      } catch (err) {
-        statusBox.className = "p-3 rounded-xl border border-rose-700 bg-rose-950/50 text-rose-300 text-xs font-mono text-center";
-        statusBox.innerText = "❌ Network Error!";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "📤 SUBMIT LEAVE / CPL APPLICATION";
-      }
-    }
-
-    function shareLeaveSlipToWhatsApp() {
-      if (!lastLeaveWhatsAppText) return;
-      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(lastLeaveWhatsAppText)}`;
-      window.open(url, '_blank');
-    }
-
-    function startQrFlow() {
-      const empId = document.getElementById('empId').value.trim();
-      if (!empId) {
-        alert("Pehle apna Employee ID enter karein!");
-        return;
-      }
-      refreshGpsLocation();
-      currentPunchMode = "QR";
-
-      document.getElementById('qrBox').classList.remove('hidden');
-      document.getElementById('actionButtons').classList.add('hidden');
-      document.getElementById('statusBox').classList.add('hidden');
-      document.getElementById('whatsappShareBox').classList.add('hidden');
-
-      html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        (decodedText) => {
-          scannedSecret = decodedText.trim();
-          stopQrScanner();
-          startSelfieCapture();
-        },
-        (err) => {}
-      ).catch(err => {
-        alert("Back camera start nahi ho paya: " + err);
-        stopQrScanner();
-      });
-    }
-
-    function stopQrScanner() {
-      if (html5QrCode) {
-        html5QrCode.stop().then(() => {
-          html5QrCode.clear();
-          document.getElementById('qrBox').classList.add('hidden');
-          document.getElementById('actionButtons').classList.remove('hidden');
-        }).catch(() => {});
-      } else {
-        document.getElementById('qrBox').classList.add('hidden');
-        document.getElementById('actionButtons').classList.remove('hidden');
-      }
-    }
-
-    function startManualFlow() {
-      const empId = document.getElementById('empId').value.trim();
-      if (!empId) {
-        alert("Pehle apna Employee ID enter karein!");
-        return;
-      }
-      refreshGpsLocation();
-      currentPunchMode = "MANUAL";
-      scannedSecret = "";
-      document.getElementById('statusBox').classList.add('hidden');
-      document.getElementById('whatsappShareBox').classList.add('hidden');
-      startSelfieCapture();
-    }
-
-    async function startSelfieCapture() {
-      const camBox = document.getElementById('cameraBox');
-      const video = document.getElementById('video');
-      const countText = document.getElementById('countdownText');
-
-      document.getElementById('actionButtons').classList.add('hidden');
-      camBox.classList.remove('hidden');
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } },
-          audio: false
-        });
-        video.srcObject = stream;
-
-        let count = 3;
-        countText.innerText = `Capturing Live Selfie in ${count}...`;
-
-        const timer = setInterval(() => {
-          count--;
-          if (count > 0) {
-            countText.innerText = `Capturing Live Selfie in ${count}...`;
-          } else {
-            clearInterval(timer);
-            countText.innerText = "Verifying Location & Saving...";
-
-            const canvas = document.getElementById('canvas');
-            canvas.width = 400;
-            canvas.height = 400;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const base64Photo = canvas.toDataURL('image/jpeg', 0.65);
-            lastCapturedPhoto = base64Photo;
-
-            stream.getTracks().forEach(track => track.stop());
-            camBox.classList.add('hidden');
-            submitWorkerAttendance(base64Photo);
-          }
-        }, 1000);
-
-      } catch (err) {
-        alert("Front camera permission zaroori hai: " + err.message);
-        camBox.classList.add('hidden');
-        document.getElementById('actionButtons').classList.remove('hidden');
-      }
-    }
-
-    async function submitWorkerAttendance(photoData) {
-      const empId = document.getElementById('empId').value.trim().toUpperCase();
-      const dutyType = document.getElementById('dutyType').value;
-      const shift = document.getElementById('shift').value;
-
-      if (userLat === null || userLng === null) {
-        showStatus("❌ GPS Location ON karein aur page refresh karein!", "error");
-        document.getElementById('actionButtons').classList.remove('hidden');
-        return;
-      }
-
-      showStatus("⏳ Verifying Geofence & Recording Attendance...", "loading");
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            empId: empId,
-            dutyType: dutyType,
-            shift: shift,
-            punchMode: currentPunchMode,
-            scannedQr: scannedSecret,
-            latitude: userLat,
-            longitude: userLng,
-            photo: photoData
-          })
-        });
-
-        const data = await res.json();
-        document.getElementById('actionButtons').classList.remove('hidden');
-
-        if (data.status === "success") {
-          const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-          const badgeIcon = data.dutyType === "ON-DUTY" ? "🟢" : "🔴";
-
-          lastWhatsAppMessage =
-            `${badgeIcon} *CGC MAINTENANCE ATTENDANCE*\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `👤 *Name:* ${data.name}\n` +
-            `🆔 *Emp ID:* ${empId}\n` +
-            `🛠 *Sub-Dept:* ${data.trade}\n` +
-            `📌 *Duty:* ${data.dutyType} (${shift})\n` +
-            `📍 *Location:* ${data.locationName}\n` +
-            `📅 *Day Type:* ${data.dayCategory}\n` +
-            `🕒 *Time:* ${data.time}\n` +
-            `📆 *Date:* ${todayStr}\n` +
-            `✅ *Status:* ${data.punctuality}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `_Verified via Digital Workforce Portal_`;
-
-          showStatus(
-            `✅ <b>ATTENDANCE MARKED!</b><br>` +
-            `👤 ${data.name} (${data.trade})<br>` +
-            `📍 Location: <b>${data.locationName}</b> (${data.distance}m)<br>` +
-            `📅 Day: <b>${data.dayCategory}</b><br>` +
-            `🕒 Time: <b>${data.time}</b> | <b>${data.punctuality}</b>`,
-            "success"
-          );
-
-          document.getElementById('whatsappShareBox').classList.remove('hidden');
-        } else {
-          showStatus(`❌ ${data.message}`, "error");
-        }
-      } catch (err) {
-        document.getElementById('actionButtons').classList.remove('hidden');
-        showStatus("❌ Network Error! Internet check karein.", "error");
-      }
-    }
-
-    async function sharePunchWithPhoto() {
-      if (!lastWhatsAppMessage) return;
-      try {
-        if (lastCapturedPhoto && navigator.canShare) {
-          const res = await fetch(lastCapturedPhoto);
-          const blob = await res.blob();
-          const file = new File([blob], "Attendance_Selfie.jpg", { type: "image/jpeg" });
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              files: [file],
-              text: lastWhatsAppMessage
-            });
-            return;
-          }
+          statusBox.className = "text-center font-mono text-[11px] pt-1 text-rose-400";
+          statusBox.innerText = data.message;
         }
       } catch (e) {
-        console.log("Fallback to text share");
+        statusBox.className = "text-center font-mono text-[11px] pt-1 text-rose-400";
+        statusBox.innerText = "Network Error!";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "📤 Submit Leave / CPL Request";
       }
-      sharePunchTextOnly();
-    }
-
-    function sharePunchTextOnly() {
-      if (!lastWhatsAppMessage) return;
-      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(lastWhatsAppMessage)}`;
-      window.open(url, '_blank');
     }
   </script>
 </body>
