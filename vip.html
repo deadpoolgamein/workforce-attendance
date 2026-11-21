@@ -13,15 +13,15 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-4 flex flex-col items-center justify-center font-sans overflow-x-hidden">
 
-  <!-- STEP 1: SUPER ADMIN PIN LOCK -->
+  <!-- STEP 1: VIP PORTAL PIN LOCK -->
   <div id="vipLockBox" class="w-full max-w-sm bg-slate-900 border border-amber-700/80 rounded-2xl shadow-2xl p-6 text-center">
     <div class="inline-flex p-3 bg-amber-950/80 border border-amber-600 rounded-2xl mb-3 text-amber-400">
       <span class="text-2xl">👑</span>
     </div>
     <h2 class="text-xl font-black tracking-wide text-white uppercase">Executive Portal</h2>
-    <p class="text-xs text-amber-300/80 mt-1 mb-5">Super Admin Exclusive Access</p>
+    <p class="text-xs text-amber-300/80 mt-1 mb-5">Authorized VIP Access Only</p>
 
-    <input type="password" id="vipPinInput" placeholder="Enter Super Admin PIN" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-2xl font-bold tracking-widest text-amber-400 mb-3 focus:outline-none focus:border-amber-500">
+    <input type="password" id="vipPinInput" placeholder="Enter VIP Access PIN" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-2xl font-bold tracking-widest text-amber-400 mb-3 focus:outline-none focus:border-amber-500">
 
     <label class="flex items-center justify-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
       <input type="checkbox" id="rememberVipPin" checked class="rounded bg-slate-800 border-slate-600 text-amber-500">
@@ -40,10 +40,10 @@
     <!-- Top Header -->
     <div class="flex items-start justify-between border-b border-slate-800 pb-3 mb-4 gap-2">
       <div class="min-w-0 flex-1">
-        <span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800">
+        <span id="vipUserRoleBadge" class="inline-flex items-center gap-1 text-[10px] font-mono font-bold tracking-widest uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-800">
           🛡️ STEALTH QR ENTRY • 100% NORMAL LOG
         </span>
-        <h1 class="text-lg sm:text-xl font-black tracking-wide text-white mt-1.5 uppercase">EXECUTIVE ATTENDANCE</h1>
+        <h1 id="vipWelcomeHeader" class="text-lg sm:text-xl font-black tracking-wide text-white mt-1.5 uppercase">EXECUTIVE ATTENDANCE</h1>
         <p class="text-[11px] text-slate-400">Sheet me bilkul normal QR scan jaisi entry hogi</p>
       </div>
       <button onclick="lockVipPortal()" class="shrink-0 px-2.5 py-1.5 bg-slate-800 hover:bg-rose-950 border border-slate-700 hover:border-rose-700 rounded-xl text-[11px] font-mono text-slate-300 hover:text-rose-300 transition">
@@ -169,8 +169,37 @@
       </button>
     </div>
 
+    <!-- SUPER ADMIN ONLY: GRANT / REVOKE VIP PORTAL ACCESS -->
+    <div id="superAdminVipAccessBox" class="hidden bg-slate-950 border border-cyan-800/80 rounded-2xl p-4 mb-3 mt-4 shadow-lg">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🔑</span> Grant / Manage VIP Access
+        </span>
+        <span class="shrink-0 text-[10px] text-cyan-300 font-mono font-bold">Super Admin Only</span>
+      </div>
+      <p class="text-[11px] text-slate-300 mb-3 leading-relaxed">
+        Kisi trusted member ko VIP Portal ka PIN dein (unke allowed Emp IDs ya <b>ALL</b> set karein):
+      </p>
+
+      <!-- Active VIP Users List -->
+      <div id="vipUsersListContainer" class="space-y-1.5 mb-3 text-[11px] font-mono"></div>
+
+      <!-- Add New VIP User Form -->
+      <div class="pt-2.5 border-t border-slate-800 space-y-2 text-xs">
+        <input type="text" id="newVipUserName" placeholder="Person Name (e.g. Gaurav Sharma)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="newVipUserPin" placeholder="4-Digit VIP PIN" class="min-w-0 w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-emerald-400 font-mono focus:outline-none focus:border-cyan-500">
+          <input type="text" id="newVipUserEmpIds" placeholder="Allowed IDs (e.g. J-337 or ALL)" class="min-w-0 w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-300 font-mono uppercase focus:outline-none focus:border-cyan-500">
+        </div>
+        <button id="addVipUserBtn" onclick="grantNewVipAccess()" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow transition active:scale-95">
+          ➕ Grant VIP Portal Access
+        </button>
+        <div id="vipAccessStatus" class="hidden text-[11px] text-center font-mono mt-1"></div>
+      </div>
+    </div>
+
     <!-- Quick Navigation Shortcuts -->
-    <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800 text-[11px]">
+    <div id="vipQuickLinksGrid" class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800 text-[11px]">
       <a href="./admin.html" class="py-2 px-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 text-cyan-400 font-bold transition">
         <span>🛡️</span> Admin Console
       </a>
@@ -187,7 +216,7 @@
 
     <!-- Footer -->
     <div class="mt-3 pt-2 text-center border-t border-slate-800/70">
-      <p class="text-[10px] text-slate-400 uppercase font-mono tracking-widest">SUPER ADMIN EXCLUSIVE • SANDEEP SINGH (J-5383)</p>
+      <p class="text-[10px] text-slate-400 uppercase font-mono tracking-widest">SYSTEM ARCHITECT & SUPER ADMIN: SANDEEP SINGH (J-5383)</p>
     </div>
 
   </div>
@@ -205,6 +234,9 @@
     let vipTimer = null;
     let lastVipReceipt = null;
     let lastCapturedPhotoBase64 = "";
+    let authenticatedVipPin = "";
+    let currentVipRole = "";
+    let vipUsersList = [];
 
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById('vipMasterSheetBtn').href = MASTER_SHEET_URL;
@@ -224,24 +256,27 @@
       const btn = document.getElementById('vipUnlockBtn');
 
       if (!pin) {
-        errBox.innerText = "Super Admin PIN enter karein!";
+        errBox.innerText = "VIP Access PIN enter karein!";
         errBox.classList.remove('hidden');
         return;
       }
 
       btn.disabled = true;
-      btn.innerText = "Verifying Super Admin...";
+      btn.innerText = "Verifying Access...";
       errBox.classList.add('hidden');
 
       try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "VERIFY_LOGIN", pin: pin })
+          body: JSON.stringify({ action: "VERIFY_VIP_LOGIN", pin: pin })
         });
         const data = await res.json();
 
-        if (data.status === "success" && data.adminRole === "SUPER_ADMIN") {
+        if (data.status === "success") {
+          authenticatedVipPin = pin;
+          currentVipRole = data.vipRole;
+
           if (document.getElementById('rememberVipPin').checked) {
             localStorage.setItem("cgc_vip_super_pin", pin);
           } else {
@@ -259,12 +294,40 @@
             });
           }
 
+          document.getElementById('vipWelcomeHeader').innerText = `WELCOME, ${data.userName}`;
+          const empInput = document.getElementById('vipEmpIdInput');
+
+          if (data.vipRole === "SUPER_ADMIN") {
+            document.getElementById('superAdminVipAccessBox').classList.remove('hidden');
+            document.getElementById('vipQuickLinksGrid').classList.remove('hidden');
+            empInput.readOnly = false;
+            empInput.value = "J-5383";
+            vipUsersList = data.vipUsersList || [];
+            renderVipUsersList();
+          } else {
+            // Restricted VIP User: Hide Super Admin controls & Master DB shortcuts
+            document.getElementById('superAdminVipAccessBox').classList.add('hidden');
+            document.getElementById('vipQuickLinksGrid').classList.add('hidden');
+            document.getElementById('vipUserRoleBadge').innerText = "👑 VIP MEMBER ACCESS";
+
+            if (data.allowedEmpIds && data.allowedEmpIds !== "ALL") {
+              const firstId = data.allowedEmpIds.split(",")[0].trim();
+              empInput.value = firstId;
+              if (data.allowedEmpIds.indexOf(",") === -1) {
+                empInput.readOnly = true;
+              }
+            } else {
+              empInput.value = "";
+              empInput.readOnly = false;
+            }
+          }
+
           document.getElementById('vipLockBox').classList.add('hidden');
           document.getElementById('vipMainBox').classList.remove('hidden');
         } else {
           localStorage.removeItem("cgc_vip_super_pin");
           if (!isAuto) {
-            errBox.innerText = "❌ Sirf Super Admin (Sandeep Singh) hi Portal khol sakte hain!";
+            errBox.innerText = data.message || "❌ Invalid VIP PIN!";
             errBox.classList.remove('hidden');
           }
         }
@@ -281,12 +344,119 @@
 
     function lockVipPortal() {
       stopVipCamera();
+      authenticatedVipPin = "";
+      currentVipRole = "";
       localStorage.removeItem("cgc_vip_super_pin");
       document.getElementById('vipPinInput').value = "";
       document.getElementById('vipMainBox').classList.add('hidden');
       document.getElementById('vipLockBox').classList.remove('hidden');
     }
 
+    // ----------------------------------------------------
+    // SUPER ADMIN: GRANT / REVOKE VIP PORTAL ACCESS
+    // ----------------------------------------------------
+    function renderVipUsersList() {
+      const box = document.getElementById('vipUsersListContainer');
+      if (!box) return;
+      if (!vipUsersList || vipUsersList.length === 0) {
+        box.innerHTML = `<p class="text-slate-400 text-center py-1">Abhi kisi aur ko VIP access nahi diya gaya hai.</p>`;
+        return;
+      }
+
+      box.innerHTML = "";
+      vipUsersList.forEach(u => {
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-2 rounded-xl gap-2";
+        row.innerHTML = `
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-white truncate">${u.name}</div>
+            <div class="text-[10px] text-slate-400 truncate">PIN: <b class="text-emerald-400">${u.pin}</b> • Allowed IDs: <b class="text-amber-300">${u.allowedEmpIds}</b></div>
+          </div>
+          <button onclick="revokeVipUserAccess('${u.id}', '${u.name.replace(/'/g, "\\'")}')" title="Revoke VIP Access" class="shrink-0 px-2.5 py-1 bg-rose-950 hover:bg-rose-800 border border-rose-800 text-rose-300 rounded-lg text-[10px] font-bold">
+            🗑️
+          </button>
+        `;
+        box.appendChild(row);
+      });
+    }
+
+    async function grantNewVipAccess() {
+      const name = document.getElementById('newVipUserName').value.trim();
+      const pin = document.getElementById('newVipUserPin').value.trim();
+      const empIds = document.getElementById('newVipUserEmpIds').value.trim().toUpperCase() || "ALL";
+      const status = document.getElementById('vipAccessStatus');
+      const btn = document.getElementById('addVipUserBtn');
+
+      if (!name || pin.length < 4) {
+        alert("Person Name aur kam se kam 4-digit PIN daalein!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Granting Access...";
+      status.classList.remove('hidden');
+      status.className = "text-[11px] text-center font-mono text-yellow-300 mt-1";
+      status.innerText = "Saving VIP access...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "ADD_VIP_USER",
+            pin: authenticatedVipPin,
+            vipName: name,
+            vipPin: pin,
+            vipEmpIds: empIds
+          })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          vipUsersList = data.vipUsersList || [];
+          renderVipUsersList();
+          status.className = "text-[11px] text-center font-mono text-emerald-400 mt-1";
+          status.innerText = "✔ " + data.message;
+          document.getElementById('newVipUserName').value = "";
+          document.getElementById('newVipUserPin').value = "";
+          document.getElementById('newVipUserEmpIds').value = "";
+        } else {
+          status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+          status.innerText = "✖ " + data.message;
+        }
+      } catch (e) {
+        status.className = "text-[11px] text-center font-mono text-rose-400 mt-1";
+        status.innerText = "Network Error!";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "➕ Grant VIP Portal Access";
+      }
+    }
+
+    async function revokeVipUserAccess(targetVipId, userName) {
+      if (!confirm(`Kya aap sach me "${userName}" ka VIP Portal access khatam karna chahte hain?`)) return;
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "DELETE_VIP_USER",
+            pin: authenticatedVipPin,
+            targetVipId: targetVipId
+          })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          vipUsersList = data.vipUsersList || [];
+          renderVipUsersList();
+        }
+      } catch (e) {
+        alert("Network Error!");
+      }
+    }
+
+    // ----------------------------------------------------
+    // TIME MODE, CAMERA & PUNCH SUBMISSION
+    // ----------------------------------------------------
     function handleTimeModeChange() {
       const tMode = document.getElementById('vipTimeModeSelect').value;
       const customTimeBox = document.getElementById('customTimeBox');
@@ -444,7 +614,8 @@
           customDate: customDate,
           customTime: customTime,
           photo: photoBase64,
-          isVip: true
+          isVip: true,
+          vipPin: authenticatedVipPin
         })
       });
       return await res.json();
